@@ -14,166 +14,76 @@
             --border-color: #e5e7eb;
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #1f2937; }
+
         .enterprise-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .enterprise-input { border: 1px solid #d1d5db; transition: all 0.2s; }
         .enterprise-input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .nav-link.active { border-bottom: 2px solid var(--primary-color); color: var(--primary-color); font-weight: 600; }
+
+        .nav-link { border-bottom: 2px solid transparent; color: #6b7280; transition: all 0.2s; }
+        .nav-link:hover { color: var(--primary-color); background-color: #eff6ff; }
+        .nav-link.active { border-bottom-color: var(--primary-color); color: var(--primary-color); font-weight: 600; }
+
+        .sub-tab { cursor: pointer; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+        .sub-tab.active { background-color: #eff6ff; color: var(--primary-color); border: 1px solid #bfdbfe; }
+        .sub-tab.inactive { color: #6b7280; border: 1px solid transparent; }
+        .sub-tab.inactive:hover { background-color: #f9fafb; }
+
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { background-color: #1d4ed8; }
-        .btn-secondary { background-color: #fff; border: 1px solid #d1d5db; }
-        .btn-secondary:hover { background-color: #f9fafb; }
-        .output-area { font-family: 'Fira Code', monospace; background-color: #1f2937; color: #f3f4f6; }
 
-        /* Device List Item */
-        .device-item { cursor: pointer; transition: all 0.2s; }
-        .device-item:hover { background-color: #eff6ff; }
-        .device-item.active { background-color: #dbeafe; border-right: 3px solid var(--primary-color); }
-
-        /* Validation Error */
-        .validation-error { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 500; }
+        .output-area { font-family: 'Fira Code', monospace; background-color: #1f2937; color: #f3f4f6; border-radius: 0.375rem; }
+        .validation-error { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 600; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="p-6 md:p-10 min-h-screen">
 
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0 z-10">
-        <div>
-            <h1 class="text-xl font-bold text-gray-900">Network Configuration Manager</h1>
-            <p class="text-xs text-gray-500">Topology Designer & Config Generator</p>
-        </div>
-        <div class="flex space-x-2">
-            <button class="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100" onclick="addDevice('router')">+ Add Router</button>
-            <button class="px-3 py-1.5 text-sm font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100" onclick="addDevice('switch')">+ Add Switch</button>
-        </div>
-    </header>
-
-    <!-- Main Layout -->
-    <div class="flex flex-1 overflow-hidden">
-
-        <!-- Sidebar: Device List -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-y-auto">
-            <div class="p-4 border-b border-gray-100">
-                <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Topology Devices</h2>
+    <div class="max-w-5xl mx-auto enterprise-card">
+        <!-- Header -->
+        <header class="px-8 py-6 border-b border-gray-200">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Network Configuration Manager</h1>
+                    <p class="text-sm text-gray-500 mt-1">Enterprise Configuration & Diagnostics Tool</p>
+                </div>
+                <nav class="flex space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+                    <button class="nav-link px-4 py-2 rounded-md text-sm font-medium active" onclick="renderTool('cisco')">Cisco Config</button>
+                    <button class="nav-link px-4 py-2 rounded-md text-sm font-medium" onclick="renderTool('diagnostics')">Diagnostics</button>
+                </nav>
             </div>
-            <div id="device-list" class="flex-1">
-                <!-- Devices rendered here -->
-            </div>
-        </aside>
+        </header>
 
-        <!-- Main Content: Configuration -->
-        <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
-            <div id="config-panel" class="max-w-5xl mx-auto hidden">
-
-                <!-- Device Header -->
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="active-device-title" class="text-2xl font-bold text-gray-800">Router Configuration</h2>
-                    <button onclick="deleteActiveDevice()" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete Device</button>
-                </div>
-
-                <!-- Global Settings Card -->
-                <div class="enterprise-card p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Global Settings</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
-                            <input type="text" id="dev-hostname" class="w-full p-2 rounded enterprise-input" oninput="updateHostname(this.value)">
-                        </div>
-                        <div class="space-y-3 pt-4">
-                            <!-- Router Specific Globals -->
-                            <div id="router-globals" class="hidden">
-                                <div class="flex items-center space-x-2">
-                                    <input type="checkbox" id="dev-mpls" onchange="updateGlobalSetting('mpls', this.checked)">
-                                    <label class="text-sm text-gray-700">Enable MPLS (Global)</label>
-                                </div>
-                                <div class="mt-2">
-                                    <label class="block text-xs font-medium text-gray-600">BGP AS Number</label>
-                                    <input type="number" id="dev-bgp-as" class="w-full p-2 mt-1 rounded enterprise-input text-sm" placeholder="e.g. 65000" oninput="updateGlobalSetting('bgpAs', this.value)">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Interfaces Section -->
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Interfaces</h3>
-                <div id="interface-list" class="space-y-4 mb-6">
-                    <!-- Dynamic Interfaces -->
-                </div>
-
-                <div class="flex justify-center mb-8">
-                    <button onclick="addInterface()" class="btn-secondary px-4 py-2 rounded-md shadow-sm text-sm font-medium flex items-center gap-2">
-                        <span>+ Add Interface</span>
-                    </button>
-                </div>
-
-                <!-- Generated Config -->
-                <div class="mt-8">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-sm font-bold text-gray-700 uppercase">Generated Configuration</h3>
-                        <button onclick="copyConfig()" class="text-blue-600 text-sm hover:underline">Copy to Clipboard</button>
-                    </div>
-                    <pre id="output-area" class="output-area p-4 rounded-md text-sm min-h-[200px]">Select a device...</pre>
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-gray-400">
-                <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                <p>Select a device from the left or create a new one.</p>
-            </div>
+        <main id="app-content" class="p-8">
+            <!-- Content loaded via JS -->
         </main>
     </div>
 
     <script>
         // --- DATA MODEL ---
-        let devices = []; // { id, type, name, interfaces: [], global: {} }
+        let devices = [];
         let activeDeviceId = null;
+        let activeSubTab = 'router'; // 'router' or 'switch'
+        let currentTool = 'cisco';
 
         // --- HELPERS: IP VALIDATION ---
         function ipToInt(ip) {
             return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
         }
-
-        function maskToInt(mask) {
-            return ipToInt(mask);
-        }
-
         function getNetwork(ip, mask) {
             return ipToInt(ip) & ipToInt(mask);
         }
-
         function validateTopology() {
-            const errors = []; // [{ deviceId, interfaceId, message }]
-
-            // 1. Check IP Overlaps within devices
-            devices.forEach(dev => {
-                const usedRanges = [];
-                dev.interfaces.filter(i => i.enabled && i.ip && i.mask).forEach(intf => {
-                    const net = getNetwork(intf.ip, intf.mask);
-                    // Simple overlap check logic could be complex (ranges).
-                    // For now, let's just check exact duplicate IPs as a basic sanity check
-                    // Or subnet mismatch is the requested feature.
-                });
-            });
-
-            // 2. Check Connection Subnet Mismatch
+            const errors = [];
             devices.forEach(dev => {
                 dev.interfaces.forEach(intf => {
-                    if (intf.connectedTo) { // { deviceId, interfaceId }
+                    if (intf.connectedTo) {
                         const remoteDev = devices.find(d => d.id == intf.connectedTo.deviceId);
                         if (remoteDev) {
                             const remoteIntf = remoteDev.interfaces.find(i => i.id == intf.connectedTo.interfaceId);
                             if (remoteIntf && intf.enabled && remoteIntf.enabled && intf.ip && intf.mask && remoteIntf.ip && remoteIntf.mask) {
-
                                 const net1 = getNetwork(intf.ip, intf.mask);
                                 const net2 = getNetwork(remoteIntf.ip, remoteIntf.mask);
-
                                 if (net1 !== net2) {
-                                    errors.push({
-                                        deviceId: dev.id,
-                                        interfaceId: intf.id,
-                                        message: `Subnet Mismatch! Connected to ${remoteDev.name} (${remoteIntf.ip})`
-                                    });
+                                    errors.push({ deviceId: dev.id, interfaceId: intf.id, message: `Subnet Mismatch! Connected to ${remoteDev.name}` });
                                 }
                             }
                         }
@@ -183,11 +93,13 @@
             return errors;
         }
 
-        // --- APP LOGIC ---
-
+        // --- STATE MANAGEMENT ---
         function init() {
-            // Add default router if empty
-            if (devices.length === 0) addDevice('router');
+            // Default devices
+            if (devices.length === 0) {
+                addDevice('router');
+            }
+            renderApp();
         }
 
         function addDevice(type) {
@@ -196,70 +108,44 @@
             const newDevice = {
                 id: id,
                 type: type,
-                name: `${type.toUpperCase()}-${num}`,
-                global: { mpls: false, bgpAs: '' },
-                interfaces: [
-                    createInterface(1, type),
-                    createInterface(2, type)
-                ]
+                name: type === 'router' ? `RTR-EDGE-0${num}` : `SW-ACCESS-0${num}`,
+                global: { mpls: false, bgpAs: '', rr: false },
+                vrfs: [
+                    { id: 1, name: '', rd: '', rt: '' },
+                    { id: 2, name: '', rd: '', rt: '' },
+                    { id: 3, name: '', rd: '', rt: '' }
+                ],
+                interfaces: [createInterface(1, type), createInterface(2, type)]
             };
             devices.push(newDevice);
-            renderDeviceList();
-            selectDevice(id);
-        }
-
-        function createInterface(id, type) {
-            return {
-                id: id,
-                prefix: "Gi",
-                number: `0/${id}`,
-                enabled: false,
-                ip: "", mask: "",
-                mode: type === 'switch' ? 'access' : 'routed',
-                vlan: "", trunkVlans: "",
-                connectedTo: null // { deviceId, interfaceId }
-            };
+            activeDeviceId = id;
+            activeSubTab = type;
+            renderApp();
         }
 
         function deleteActiveDevice() {
             if (!activeDeviceId) return;
             devices = devices.filter(d => d.id !== activeDeviceId);
-            activeDeviceId = null;
 
-            // Clean up connections pointing to this device
-            devices.forEach(d => {
-                d.interfaces.forEach(i => {
-                    if (i.connectedTo && i.connectedTo.deviceId === activeDeviceId) {
-                        i.connectedTo = null;
-                    }
-                });
-            });
+            // Clean links
+            devices.forEach(d => d.interfaces.forEach(i => {
+                if (i.connectedTo?.deviceId === activeDeviceId) i.connectedTo = null;
+            }));
 
-            renderDeviceList();
-            renderConfigPanel();
+            // Pick next device of same type, or any device
+            const nextDev = devices.find(d => d.type === activeSubTab) || devices[0];
+            activeDeviceId = nextDev ? nextDev.id : null;
+            renderApp();
         }
 
-        function selectDevice(id) {
-            activeDeviceId = id;
-            renderDeviceList();
-            renderConfigPanel();
-        }
-
-        function updateHostname(val) {
-            const dev = devices.find(d => d.id === activeDeviceId);
-            if (dev) {
-                dev.name = val;
-                renderDeviceList(); // Update name in sidebar
-                generateConfig();
-            }
-        }
-
-        function updateGlobalSetting(key, val) {
-            const dev = devices.find(d => d.id === activeDeviceId);
-            if (dev) {
-                dev.global[key] = val;
-                generateConfig();
-            }
+        function createInterface(id, type) {
+            return {
+                id: id, prefix: "Gi", number: `0/${id}`, enabled: false,
+                ip: "", mask: "", mode: type === 'switch' ? 'access' : 'routed',
+                vlan: "", trunkVlans: "", vrf: "", routingProtocol: 'none',
+                ospfProcess: '', ospfArea: '', bgpNeighborIp: '', bgpNeighborAs: '',
+                mplsEnabled: false, connectedTo: null
+            };
         }
 
         function addInterface() {
@@ -267,247 +153,342 @@
             if (!dev) return;
             const newId = dev.interfaces.length > 0 ? Math.max(...dev.interfaces.map(i => i.id)) + 1 : 1;
             dev.interfaces.push(createInterface(newId, dev.type));
-            renderConfigPanel();
+            renderApp();
         }
 
         function removeInterface(intId) {
             const dev = devices.find(d => d.id === activeDeviceId);
             if (!dev) return;
             dev.interfaces = dev.interfaces.filter(i => i.id !== intId);
-            renderConfigPanel();
+            renderApp();
         }
 
-        function updateInterface(intId, field, value) {
+        // --- UPDATE HELPERS ---
+        function updateDevice(field, val) {
             const dev = devices.find(d => d.id === activeDeviceId);
-            if (!dev) return;
+            if(dev) { dev[field] = val; generateConfig(); }
+        }
+        function updateGlobal(field, val) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if(dev) { dev.global[field] = val; generateConfig(); }
+        }
+        function updateVrf(idx, field, val) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if(dev) { dev.vrfs[idx][field] = val; generateConfig(); }
+        }
+        function updateInt(intId, field, val) {
+            const dev = devices.find(d => d.id === activeDeviceId);
             const intf = dev.interfaces.find(i => i.id === intId);
-            if (!intf) return;
-
-            intf[field] = value;
-
-            // Re-render only if necessary to avoid focus loss, otherwise just generate config
-            if (field === 'mode' || field === 'enabled') {
-                renderConfigPanel();
-            } else {
+            if(intf) {
+                intf[field] = val;
                 generateConfig();
-                // If checking connectivity, trigger validation UI updates
-                if (field === 'ip' || field === 'mask') renderValidationErrors();
+                if(['ip','mask'].includes(field)) renderValidationErrors();
             }
         }
-
-        function updateConnection(intId, targetString) {
+        function updateConnection(intId, val) {
             const dev = devices.find(d => d.id === activeDeviceId);
             const intf = dev.interfaces.find(i => i.id === intId);
-            if (!targetString) {
-                intf.connectedTo = null;
-            } else {
-                const [targetDevId, targetIntId] = targetString.split(':');
-                intf.connectedTo = { deviceId: targetDevId, interfaceId: parseInt(targetIntId) };
-
-                // Optional: Auto-link the other side? (User requested "connect ports", usually implies bidirectional)
-                // Let's do bidirectional linking for convenience
-                const remoteDev = devices.find(d => d.id === targetDevId);
-                const remoteIntf = remoteDev.interfaces.find(i => i.id == targetIntId);
-                if (remoteIntf) {
-                    remoteIntf.connectedTo = { deviceId: dev.id, interfaceId: intf.id };
+            if(intf) {
+                if(!val) intf.connectedTo = null;
+                else {
+                    const [dId, iId] = val.split(':');
+                    intf.connectedTo = { deviceId: dId, interfaceId: parseInt(iId) };
+                    // Auto-link remote
+                    const rDev = devices.find(d => d.id === dId);
+                    const rInt = rDev?.interfaces.find(i => i.id == iId);
+                    if(rInt) rInt.connectedTo = { deviceId: dev.id, interfaceId: intf.id };
                 }
+                renderValidationErrors();
             }
-            renderValidationErrors();
         }
 
-        // --- RENDERING ---
-
-        function renderDeviceList() {
-            const list = document.getElementById('device-list');
-            list.innerHTML = devices.map(d => `
-                <div onclick="selectDevice('${d.id}')" class="device-item p-3 border-b border-gray-50 ${d.id === activeDeviceId ? 'active' : ''}">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="font-bold text-sm text-gray-800">${d.name}</div>
-                            <div class="text-xs text-gray-500">${d.type.toUpperCase()}</div>
-                        </div>
-                        <div class="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">${d.interfaces.length} IFs</div>
-                    </div>
-                </div>
-            `).join('');
+        // --- RENDER ---
+        function renderTool(tool) {
+            currentTool = tool;
+            renderApp();
         }
 
-        function renderConfigPanel() {
-            const dev = devices.find(d => d.id === activeDeviceId);
-            const panel = document.getElementById('config-panel');
-            const empty = document.getElementById('empty-state');
-
-            if (!dev) {
-                panel.classList.add('hidden');
-                empty.classList.remove('hidden');
+        function renderApp() {
+            const content = document.getElementById('app-content');
+            if (currentTool === 'diagnostics') {
+                content.innerHTML = getDiagnosticsHtml();
                 return;
             }
 
-            panel.classList.remove('hidden');
-            empty.classList.add('hidden');
+            // Cisco Tool Logic
+            const filteredDevices = devices.filter(d => d.type === activeSubTab);
+            // Auto-select if activeDevice is invalid for current tab
+            if (!activeDeviceId || !devices.find(d => d.id === activeDeviceId && d.type === activeSubTab)) {
+                activeDeviceId = filteredDevices.length > 0 ? filteredDevices[0].id : null;
+            }
+            const activeDevice = devices.find(d => d.id === activeDeviceId);
 
-            document.getElementById('active-device-title').innerText = `${dev.type === 'router' ? 'Router' : 'Switch'} Config: ${dev.name}`;
-            document.getElementById('dev-hostname').value = dev.name;
+            // Sub-Nav
+            let html = `
+                <div class="flex justify-center mb-6">
+                    <div class="bg-gray-100 p-1 rounded-lg flex space-x-1">
+                        <button class="sub-tab ${activeSubTab==='router'?'active':'inactive'}" onclick="activeSubTab='router'; renderApp()">Router Config</button>
+                        <button class="sub-tab ${activeSubTab==='switch'?'active':'inactive'}" onclick="activeSubTab='switch'; renderApp()">Switch Config</button>
+                    </div>
+                </div>
+            `;
 
-            // Global Toggles
-            const routerGlobals = document.getElementById('router-globals');
-            if (dev.type === 'router') {
-                routerGlobals.classList.remove('hidden');
-                document.getElementById('dev-mpls').checked = dev.global.mpls || false;
-                document.getElementById('dev-bgp-as').value = dev.global.bgpAs || '';
+            // Device Control Bar
+            html += `
+                <div class="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-medium text-gray-700">Select Device:</label>
+                        <select onchange="activeDeviceId=this.value; renderApp()" class="p-2 rounded border border-gray-300 text-sm min-w-[200px]">
+                            ${filteredDevices.length ? filteredDevices.map(d => `<option value="${d.id}" ${d.id===activeDeviceId?'selected':''}>${d.name}</option>`).join('') : '<option>No Devices</option>'}
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="addDevice('${activeSubTab}')" class="px-3 py-1.5 text-xs font-bold text-white bg-green-600 rounded hover:bg-green-700">+ Add ${activeSubTab === 'router' ? 'Router' : 'Switch'}</button>
+                        ${activeDeviceId ? `<button onclick="deleteActiveDevice()" class="px-3 py-1.5 text-xs font-bold text-white bg-red-500 rounded hover:bg-red-600">Delete</button>` : ''}
+                    </div>
+                </div>
+            `;
+
+            if (activeDevice) {
+                // Global Config Card
+                html += `
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Global Configuration</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
+                                <input type="text" value="${activeDevice.name}" class="w-full p-2 rounded enterprise-input" oninput="updateDevice('name', this.value)">
+                            </div>
+                            <div class="space-y-2 pt-4">
+                                <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                    <input type="checkbox" checked disabled> <span>Include Standard Boilerplate</span>
+                                </label>
+                                ${activeSubTab === 'router' ? `
+                                    <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                        <input type="checkbox" ${activeDevice.global.mpls?'checked':''} onchange="updateGlobal('mpls', this.checked)"> <span>Enable MPLS (Global)</span>
+                                    </label>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Router Specific: VRF & BGP Grid
+                if (activeSubTab === 'router') {
+                    html += `
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                                <h3 class="text-md font-bold text-gray-800 mb-4">VRF Definitions</h3>
+                                <div class="space-y-4">
+                                    ${activeDevice.vrfs.map((vrf, idx) => `
+                                        <div class="p-3 border rounded bg-gray-50">
+                                            <div class="mb-2">
+                                                <label class="block text-xs font-medium text-gray-600">VRF ${vrf.id} Name</label>
+                                                <input type="text" value="${vrf.name}" class="w-full p-1.5 rounded border text-xs" placeholder="e.g. CUST_A" oninput="updateVrf(${idx}, 'name', this.value)">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input type="text" value="${vrf.rd}" class="p-1.5 rounded border text-xs" placeholder="RD (65000:1)" oninput="updateVrf(${idx}, 'rd', this.value)">
+                                                <input type="text" value="${vrf.rt}" class="p-1.5 rounded border text-xs" placeholder="RT (65000:1)" oninput="updateVrf(${idx}, 'rt', this.value)">
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                                <h3 class="text-md font-bold text-gray-800 mb-4">BGP Configuration</h3>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Router BGP AS</label>
+                                    <input type="number" value="${activeDevice.global.bgpAs}" class="w-full p-2 rounded enterprise-input" placeholder="65000" oninput="updateGlobal('bgpAs', this.value)">
+                                </div>
+                                <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                    <input type="checkbox" ${activeDevice.global.rr?'checked':''} onchange="updateGlobal('rr', this.checked)"> <span>Enable Route Reflector (RR)</span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Interfaces
+                html += `<h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Interfaces</h3>`;
+                html += `<div class="space-y-4 mb-8">`;
+
+                activeDevice.interfaces.forEach(intf => {
+                    html += `
+                        <div class="p-5 rounded-lg border transition-colors duration-200 ${intf.enabled ? 'bg-white border-green-500 shadow-sm' : 'bg-gray-50 border-gray-200'}">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" ${intf.enabled?'checked':''} onchange="updateInt(${intf.id}, 'enabled', this.checked)">
+                                    <h3 class="text-md font-bold ${intf.enabled?'text-gray-900':'text-gray-400'}">Interface ${intf.id}</h3>
+                                </div>
+                                <div class="flex gap-2">
+                                    <span class="text-xs font-semibold px-2 py-1 rounded ${intf.enabled?'bg-green-100 text-green-800':'bg-gray-200 text-gray-500'}">${intf.enabled?'ACTIVE':'DISABLED'}</span>
+                                    <button onclick="removeInterface(${intf.id})" class="text-gray-400 hover:text-red-500 font-bold">&times;</button>
+                                </div>
+                            </div>
+
+                            <div class="${intf.enabled ? '' : 'opacity-50 pointer-events-none'} space-y-4">
+                                <div class="flex gap-4">
+                                    <div class="w-1/3">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                                        <select class="w-full p-2 rounded enterprise-input text-sm" onchange="updateInt(${intf.id}, 'prefix', this.value)">
+                                            <option value="Gi" ${intf.prefix==='Gi'?'selected':''}>Gi</option>
+                                            <option value="Fa" ${intf.prefix==='Fa'?'selected':''}>Fa</option>
+                                            <option value="Te" ${intf.prefix==='Te'?'selected':''}>Te</option>
+                                        </select>
+                                    </div>
+                                    <div class="w-2/3">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Port</label>
+                                        <input type="text" value="${intf.number}" class="w-full p-2 rounded enterprise-input text-sm" oninput="updateInt(${intf.id}, 'number', this.value)">
+                                    </div>
+                                </div>
+
+                                ${activeSubTab === 'router' ? `
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">IP Address</label>
+                                            <input type="text" value="${intf.ip}" class="w-full p-2 rounded enterprise-input text-sm" placeholder="192.168.1.1" oninput="updateInt(${intf.id}, 'ip', this.value)">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Subnet Mask</label>
+                                            <input type="text" value="${intf.mask}" class="w-full p-2 rounded enterprise-input text-sm" placeholder="255.255.255.0" oninput="updateInt(${intf.id}, 'mask', this.value)">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">VRF</label>
+                                            <select class="w-full p-2 rounded enterprise-input text-sm" onchange="updateInt(${intf.id}, 'vrf', this.value)">
+                                                <option value="">No VRF</option>
+                                                ${activeDevice.vrfs.filter(v=>v.name).map(v=>`<option value="${v.name}" ${intf.vrf===v.name?'selected':''}>${v.name}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Protocol</label>
+                                            <select class="w-full p-2 rounded enterprise-input text-sm" onchange="updateInt(${intf.id}, 'routingProtocol', this.value)">
+                                                <option value="none" ${intf.routingProtocol==='none'?'selected':''}>None</option>
+                                                <option value="ospf" ${intf.routingProtocol==='ospf'?'selected':''}>OSPF</option>
+                                                <option value="bgp" ${intf.routingProtocol==='bgp'?'selected':''}>BGP</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <label class="flex items-center space-x-2 text-xs text-gray-600"><input type="checkbox" ${intf.vlan?'checked':''} onchange="updateInt(${intf.id}, 'vlan', this.checked?10:'')"> <span>Subinterface (Dot1Q)</span></label>
+                                        <label class="flex items-center space-x-2 text-xs text-gray-600"><input type="checkbox" ${intf.mplsEnabled?'checked':''} onchange="updateInt(${intf.id}, 'mplsEnabled', this.checked)"> <span>Enable MPLS</span></label>
+                                    </div>
+                                ` : `
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Mode</label>
+                                        <select class="w-full p-2 rounded enterprise-input text-sm" onchange="updateInt(${intf.id}, 'mode', this.value)">
+                                            <option value="access" ${intf.mode==='access'?'selected':''}>Access</option>
+                                            <option value="trunk" ${intf.mode==='trunk'?'selected':''}>Trunk</option>
+                                        </select>
+                                    </div>
+                                    ${intf.mode === 'access' ? `
+                                        <div><label class="block text-xs font-medium text-gray-600 mb-1">Access VLAN</label><input type="number" value="${intf.vlan}" class="w-full p-2 rounded enterprise-input text-sm" oninput="updateInt(${intf.id}, 'vlan', this.value)"></div>
+                                    ` : `
+                                        <div><label class="block text-xs font-medium text-gray-600 mb-1">Allowed VLANs</label><input type="text" value="${intf.trunkVlans}" class="w-full p-2 rounded enterprise-input text-sm" oninput="updateInt(${intf.id}, 'trunkVlans', this.value)"></div>
+                                    `}
+                                `}
+
+                                <!-- Connection & Validation -->
+                                <div class="bg-blue-50 p-3 rounded border border-blue-100">
+                                    <label class="block text-xs font-bold text-blue-800 mb-1">Connected To</label>
+                                    <select class="w-full p-1.5 rounded border border-blue-200 text-sm" onchange="updateConnection(${intf.id}, this.value)">
+                                        <option value="">-- Disconnected --</option>
+                                        ${devices.filter(d=>d.id!==activeDevice.id).flatMap(d=>d.interfaces.map(i=>`<option value="${d.id}:${i.id}" ${intf.connectedTo?.deviceId==d.id && intf.connectedTo?.interfaceId==i.id ? 'selected':''}>${d.name} ${i.prefix}${i.number}</option>`)).join('')}
+                                    </select>
+                                    <div id="error-${activeDevice.id}-${intf.id}" class="validation-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="flex justify-center">
+                        <button onclick="addInterface()" class="flex items-center gap-2 px-4 py-2 border rounded shadow-sm text-sm font-medium hover:bg-gray-50">
+                            <span>+ Add Interface</span>
+                        </button>
+                    </div>
+                </div>`; // Close Interfaces
+
+                // Output
+                html += `
+                    <div class="mt-8">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-bold text-gray-700 uppercase">Generated Configuration</h3>
+                            <button onclick="copyConfig()" class="text-blue-600 text-sm hover:underline">Copy</button>
+                        </div>
+                        <pre id="output-area" class="output-area p-4 text-sm leading-relaxed min-h-[200px]"></pre>
+                    </div>
+                `;
             } else {
-                routerGlobals.classList.add('hidden');
+                html += `<div class="text-center py-12 text-gray-500">No devices created. Click "Add ${activeSubTab === 'router' ? 'Router' : 'Switch'}" above.</div>`;
             }
 
-            // Interfaces
-            const container = document.getElementById('interface-list');
-            container.innerHTML = dev.interfaces.map(intf => renderInterfaceCard(dev, intf)).join('');
-
+            content.innerHTML = html;
             generateConfig();
             renderValidationErrors();
         }
 
-        function renderInterfaceCard(dev, intf) {
-            // Build Connection Options
-            // Filter out self
-            const connectionOptions = [`<option value="">-- Disconnected --</option>`];
-            devices.filter(d => d.id !== dev.id).forEach(d => {
-                d.interfaces.forEach(i => {
-                    const selected = intf.connectedTo && intf.connectedTo.deviceId == d.id && intf.connectedTo.interfaceId == i.id ? 'selected' : '';
-                    connectionOptions.push(`<option value="${d.id}:${i.id}" ${selected}>${d.name} - ${i.prefix}${i.number}</option>`);
-                });
-            });
-
-            // Specific Fields based on Type/Mode
-            let typeSpecificFields = '';
-            if (dev.type === 'router') {
-                typeSpecificFields = `
-                    <div class="grid grid-cols-2 gap-4 mt-2">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500">IP Address</label>
-                            <input type="text" value="${intf.ip}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="192.168.1.1" onchange="updateInterface(${intf.id}, 'ip', this.value)">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500">Subnet Mask</label>
-                            <input type="text" value="${intf.mask}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="255.255.255.0" onchange="updateInterface(${intf.id}, 'mask', this.value)">
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Switch
-                typeSpecificFields = `
-                    <div class="mt-2">
-                        <label class="block text-xs font-medium text-gray-500">Mode</label>
-                        <select onchange="updateInterface(${intf.id}, 'mode', this.value)" class="w-full p-1.5 rounded enterprise-input text-sm mb-2">
-                            <option value="access" ${intf.mode === 'access' ? 'selected' : ''}>Access</option>
-                            <option value="trunk" ${intf.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
-                        </select>
-                        ${intf.mode === 'access' ? `
-                            <label class="block text-xs font-medium text-gray-500">Access VLAN</label>
-                            <input type="number" value="${intf.vlan}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="10" onchange="updateInterface(${intf.id}, 'vlan', this.value)">
-                        ` : `
-                            <label class="block text-xs font-medium text-gray-500">Allowed VLANs</label>
-                            <input type="text" value="${intf.trunkVlans}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="10,20" onchange="updateInterface(${intf.id}, 'trunkVlans', this.value)">
-                        `}
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="enterprise-card p-4 border-l-4 ${intf.enabled ? 'border-l-green-500' : 'border-l-gray-300'}">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" ${intf.enabled ? 'checked' : ''} onchange="updateInterface(${intf.id}, 'enabled', this.checked)">
-                            <div class="flex gap-2">
-                                <select onchange="updateInterface(${intf.id}, 'prefix', this.value)" class="p-1 rounded border text-sm">
-                                    <option value="Gi" ${intf.prefix==='Gi'?'selected':''}>Gi</option>
-                                    <option value="Fa" ${intf.prefix==='Fa'?'selected':''}>Fa</option>
-                                    <option value="Te" ${intf.prefix==='Te'?'selected':''}>Te</option>
-                                </select>
-                                <input type="text" value="${intf.number}" class="w-16 p-1 rounded border text-sm" onchange="updateInterface(${intf.id}, 'number', this.value)">
-                            </div>
-                        </div>
-                        <button onclick="removeInterface(${intf.id})" class="text-gray-400 hover:text-red-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-
-                    ${typeSpecificFields}
-
-                    <div class="mt-3 pt-3 border-t border-gray-100 bg-gray-50 p-2 rounded">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Topology Connection</label>
-                        <select onchange="updateConnection(${intf.id}, this.value)" class="w-full p-1.5 rounded border border-gray-300 text-sm">
-                            ${connectionOptions.join('')}
-                        </select>
-                        <div id="validation-msg-${dev.id}-${intf.id}" class="validation-error"></div>
-                    </div>
-                </div>
-            `;
-        }
-
         function renderValidationErrors() {
-            // Clear all first
-            document.querySelectorAll('.validation-error').forEach(el => el.innerText = '');
-
+            document.querySelectorAll('.validation-error').forEach(e => e.innerText = '');
             const errors = validateTopology();
-            errors.forEach(err => {
-                // err: { deviceId, interfaceId, message }
-                const el = document.getElementById(`validation-msg-${err.deviceId}-${err.interfaceId}`);
-                if (el) {
-                    el.innerText = err.message;
-                }
+            errors.forEach(e => {
+                const el = document.getElementById(`error-${e.deviceId}-${e.interfaceId}`);
+                if (el) el.innerText = e.message;
             });
         }
-
-        // --- CONFIG GENERATION ---
 
         function generateConfig() {
             const dev = devices.find(d => d.id === activeDeviceId);
-            const output = document.getElementById('output-area');
-            if (!dev) return;
+            const out = document.getElementById('output-area');
+            if(!dev || !out) return;
 
-            let config = `hostname ${dev.name}\n!\n`;
+            let c = `hostname ${dev.name}\n!\n`;
 
-            if (dev.type === 'router') {
-                if (dev.global.mpls) config += `mpls ip\n`;
-                if (dev.global.bgpAs) config += `router bgp ${dev.global.bgpAs}\n bgp log-neighbor-changes\n!\n`;
+            // VRFs
+            if (dev.type === 'router' && dev.vrfs) {
+                dev.vrfs.filter(v=>v.name).forEach(v => {
+                    c += `vrf definition ${v.name}\n rd ${v.rd}\n route-target export ${v.rt}\n route-target import ${v.rt}\n address-family ipv4\n exit-address-family\n!\n`;
+                });
             }
 
-            dev.interfaces.forEach(intf => {
-                if (!intf.enabled) return;
+            if (dev.type === 'router' && dev.global.mpls) c += `mpls ip\n`;
+            if (dev.type === 'router' && dev.global.bgpAs) c += `router bgp ${dev.global.bgpAs}\n bgp log-neighbor-changes\n!\n`;
 
-                config += `interface ${intf.prefix}${intf.number}\n`;
-
-                if (dev.type === 'switch') {
-                    if (intf.mode === 'access') {
-                        config += ` switchport mode access\n`;
-                        if (intf.vlan) config += ` switchport access vlan ${intf.vlan}\n`;
+            dev.interfaces.forEach(i => {
+                if(!i.enabled) return;
+                c += `interface ${i.prefix}${i.number}\n`;
+                if(dev.type === 'switch') {
+                    if(i.mode === 'access') {
+                        c += ` switchport mode access\n`;
+                        if(i.vlan) c += ` switchport access vlan ${i.vlan}\n`;
                     } else {
-                        config += ` switchport trunk encapsulation dot1q\n switchport mode trunk\n`;
-                        if (intf.trunkVlans) config += ` switchport trunk allowed vlan ${intf.trunkVlans}\n`;
+                        c += ` switchport trunk encapsulation dot1q\n switchport mode trunk\n`;
+                        if(i.trunkVlans) c += ` switchport trunk allowed vlan ${i.trunkVlans}\n`;
                     }
                 } else {
-                    // Router
-                    if (intf.ip && intf.mask) config += ` ip address ${intf.ip} ${intf.mask}\n`;
-                    if (dev.global.mpls) config += ` mpls ip\n`;
+                    if(i.vrf) c += ` vrf forwarding ${i.vrf}\n`;
+                    if(i.ip && i.mask) c += ` ip address ${i.ip} ${i.mask}\n`;
+                    if(i.mplsEnabled) c += ` mpls ip\n`;
+                    if(i.routingProtocol === 'ospf' && i.ospfProcess) c += ` ip ospf ${i.ospfProcess} area ${i.ospfArea}\n`;
                 }
-
-                config += ` no shutdown\n!\n`;
+                c += ` no shutdown\n!\n`;
             });
+            c += `end`;
+            out.innerText = c;
+        }
 
-            config += `end`;
-            output.textContent = config;
+        function getDiagnosticsHtml() {
+            return `<div class="max-w-xl mx-auto"><h2 class="text-xl font-bold mb-4">Diagnostics</h2><p>Ping tool placeholder.</p></div>`;
         }
 
         function copyConfig() {
-            const output = document.getElementById('output-area').innerText;
-            navigator.clipboard.writeText(output);
-            alert("Config copied!");
+            navigator.clipboard.writeText(document.getElementById('output-area').innerText);
+            alert("Copied!");
         }
 
-        // Start
         init();
-
     </script>
 </body>
 </html>
