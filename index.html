@@ -4,1412 +4,510 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Configuration Manager</title>
-    <!-- Include Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code&display=swap" rel="stylesheet">
     <style>
-        /* Enterprise Theme Variables */
         :root {
-            --primary-color: #2563eb; /* Royal Blue */
-            --primary-hover: #1d4ed8;
-            --bg-color: #f3f4f6; /* Light Gray */
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
             --card-bg: #ffffff;
-            --text-main: #1f2937; /* Dark Gray */
-            --text-muted: #6b7280;
             --border-color: #e5e7eb;
-            --input-bg: #ffffff;
-            --input-border: #d1d5db;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
         }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #1f2937; }
+        .enterprise-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .enterprise-input { border: 1px solid #d1d5db; transition: all 0.2s; }
+        .enterprise-input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .nav-link.active { border-bottom: 2px solid var(--primary-color); color: var(--primary-color); font-weight: 600; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-secondary { background-color: #fff; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background-color: #f9fafb; }
+        .output-area { font-family: 'Fira Code', monospace; background-color: #1f2937; color: #f3f4f6; }
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-        }
+        /* Device List Item */
+        .device-item { cursor: pointer; transition: all 0.2s; }
+        .device-item:hover { background-color: #eff6ff; }
+        .device-item.active { background-color: #dbeafe; border-right: 3px solid var(--primary-color); }
 
-        /* Card Styling */
-        .enterprise-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border-radius: 0.5rem;
-        }
-
-        /* Input Styling */
-        .enterprise-input {
-            background-color: var(--input-bg);
-            border: 1px solid var(--input-border);
-            color: var(--text-main);
-            transition: all 0.2s;
-        }
-        .enterprise-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            outline: none;
-        }
-        .enterprise-input:disabled {
-            background-color: #f9fafb;
-            color: #9ca3af;
-        }
-
-        /* Output Area - Professional Terminal Look */
-        .output-area {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background-color: #1f2937; /* Slate 800 */
-            color: #f3f4f6; /* Slate 100 */
-            border: 1px solid #374151;
-            font-family: 'Fira Code', 'Roboto Mono', monospace;
-            border-radius: 0.375rem;
-        }
-
-        /* Navigation Tabs */
-        .nav-link {
-            border-bottom: 2px solid transparent;
-            color: var(--text-muted);
-            transition: all 0.2s ease-in-out;
-        }
-        .nav-link:hover {
-            color: var(--primary-color);
-            background-color: #eff6ff;
-        }
-        .nav-link.active {
-            border-bottom-color: var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-            transition: background-color 0.2s;
-        }
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-
-        .btn-secondary {
-            background-color: #ffffff;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-        }
-        .btn-secondary:hover {
-            background-color: #f9fafb;
-            border-color: #d1d5db;
-        }
-
-        /* Checkboxes */
-        input[type="checkbox"] {
-            accent-color: var(--primary-color);
-            height: 1rem;
-            width: 1rem;
-            border-radius: 0.25rem;
-            border-color: #d1d5db;
-        }
-
-        /* Section Highlights */
-        .section-highlight {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.125rem 0.625rem;
-            border-radius: 9999px;
-        }
-        .status-badge.active {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        .status-badge.inactive {
-            background-color: #f3f4f6;
-            color: #6b7280;
-        }
-
-        /* Sub-tab styling for Router/Switch toggle */
-        .sub-tab {
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .sub-tab.active {
-            background-color: #eff6ff;
-            color: var(--primary-color);
-            border: 1px solid #bfdbfe;
-        }
-        .sub-tab.inactive {
-            color: var(--text-muted);
-            border: 1px solid transparent;
-        }
-        .sub-tab.inactive:hover {
-            background-color: #f9fafb;
-        }
+        /* Validation Error */
+        .validation-error { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; font-weight: 500; }
     </style>
 </head>
-<body class="p-6 md:p-10 min-h-screen">
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- Main Container -->
-    <div class="max-w-5xl mx-auto enterprise-card">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0 z-10">
+        <div>
+            <h1 class="text-xl font-bold text-gray-900">Network Configuration Manager</h1>
+            <p class="text-xs text-gray-500">Topology Designer & Config Generator</p>
+        </div>
+        <div class="flex space-x-2">
+            <button class="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100" onclick="addDevice('router')">+ Add Router</button>
+            <button class="px-3 py-1.5 text-sm font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100" onclick="addDevice('switch')">+ Add Switch</button>
+        </div>
+    </header>
 
-        <!-- Header -->
-        <header class="px-8 py-6 border-b border-gray-200">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Network Configuration Manager</h1>
-                    <p class="text-sm text-gray-500 mt-1">Enterprise Configuration & Diagnostics Tool</p>
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- Sidebar: Device List -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-y-auto">
+            <div class="p-4 border-b border-gray-100">
+                <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Topology Devices</h2>
+            </div>
+            <div id="device-list" class="flex-1">
+                <!-- Devices rendered here -->
+            </div>
+        </aside>
+
+        <!-- Main Content: Configuration -->
+        <main class="flex-1 overflow-y-auto p-8 bg-gray-50">
+            <div id="config-panel" class="max-w-5xl mx-auto hidden">
+
+                <!-- Device Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="active-device-title" class="text-2xl font-bold text-gray-800">Router Configuration</h2>
+                    <button onclick="deleteActiveDevice()" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete Device</button>
                 </div>
 
-                <!-- Navigation Tabs -->
-                <nav class="flex space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
-                    <button class="nav-link px-4 py-2 rounded-md text-sm font-medium"
-                            data-tool="cisco" onclick="renderTool('cisco')">
-                        Cisco Config
-                    </button>
-                    <button class="nav-link px-4 py-2 rounded-md text-sm font-medium"
-                            data-tool="placeholder" onclick="renderTool('placeholder')">
-                        Diagnostics
-                    </button>
-                </nav>
-            </div>
-        </header>
+                <!-- Global Settings Card -->
+                <div class="enterprise-card p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Global Settings</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
+                            <input type="text" id="dev-hostname" class="w-full p-2 rounded enterprise-input" oninput="updateHostname(this.value)">
+                        </div>
+                        <div class="space-y-3 pt-4">
+                            <!-- Router Specific Globals -->
+                            <div id="router-globals" class="hidden">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="dev-mpls" onchange="updateGlobalSetting('mpls', this.checked)">
+                                    <label class="text-sm text-gray-700">Enable MPLS (Global)</label>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="block text-xs font-medium text-gray-600">BGP AS Number</label>
+                                    <input type="number" id="dev-bgp-as" class="w-full p-2 mt-1 rounded enterprise-input text-sm" placeholder="e.g. 65000" oninput="updateGlobalSetting('bgpAs', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Application Content -->
-        <main id="app-content" class="p-8">
-            <!-- Content loaded via JS -->
+                <!-- Interfaces Section -->
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Interfaces</h3>
+                <div id="interface-list" class="space-y-4 mb-6">
+                    <!-- Dynamic Interfaces -->
+                </div>
+
+                <div class="flex justify-center mb-8">
+                    <button onclick="addInterface()" class="btn-secondary px-4 py-2 rounded-md shadow-sm text-sm font-medium flex items-center gap-2">
+                        <span>+ Add Interface</span>
+                    </button>
+                </div>
+
+                <!-- Generated Config -->
+                <div class="mt-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-gray-700 uppercase">Generated Configuration</h3>
+                        <button onclick="copyConfig()" class="text-blue-600 text-sm hover:underline">Copy to Clipboard</button>
+                    </div>
+                    <pre id="output-area" class="output-area p-4 rounded-md text-sm min-h-[200px]">Select a device...</pre>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-gray-400">
+                <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <p>Select a device from the left or create a new one.</p>
+            </div>
         </main>
     </div>
 
     <script>
-        // --- Global State ---
-        const appContent = document.getElementById('app-content');
-        let currentToolId = '';
+        // --- DATA MODEL ---
+        let devices = []; // { id, type, name, interfaces: [], global: {} }
+        let activeDeviceId = null;
 
-        // Device Mode State
-        let deviceType = 'router'; // 'router' or 'switch'
-        let mplsGlobal = false;
+        // --- HELPERS: IP VALIDATION ---
+        function ipToInt(ip) {
+            return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+        }
 
-        // Initial interface data (Updated schema for Switch/MPLS)
-        let interfaceData = [
-            {
-                id: 1, prefix: "Gi", number: "",
-                mode: "routed", // 'routed', 'access', 'trunk'
-                ip: "", mask: "",
-                vlan: "", // For subinterface ID or Access VLAN
-                trunkVlans: "", // For trunk allowed vlans
-                vrf: "",
-                enabled: false,
-                routingProtocol: 'none', ospfProcess: '', ospfArea: '',
-                bgpAs: '', bgpNeighborIp: '', bgpNeighborAs: '',
-                mplsEnabled: false
-            },
-            { id: 2, prefix: "Gi", number: "", mode: "routed", ip: "", mask: "", vlan: "", trunkVlans: "", vrf: "", enabled: false, routingProtocol: 'none', ospfProcess: '', ospfArea: '', bgpAs: '', bgpNeighborIp: '', bgpNeighborAs: '', mplsEnabled: false },
-            { id: 3, prefix: "Gi", number: "", mode: "routed", ip: "", mask: "", vlan: "", trunkVlans: "", vrf: "", enabled: false, routingProtocol: 'none', ospfProcess: '', ospfArea: '', bgpAs: '', bgpNeighborIp: '', bgpNeighborAs: '', mplsEnabled: false },
-            { id: 4, prefix: "Gi", number: "", mode: "routed", ip: "", mask: "", vlan: "", trunkVlans: "", vrf: "", enabled: false, routingProtocol: 'none', ospfProcess: '', ospfArea: '', bgpAs: '', bgpNeighborIp: '', bgpNeighborAs: '', mplsEnabled: false }
-        ];
+        function maskToInt(mask) {
+            return ipToInt(mask);
+        }
 
-        // Global VRF data
-        const vrfDefinitions = [
-            { id: 1, name: '', rd: '', rt: '' },
-            { id: 2, name: '', rd: '', rt: '' },
-            { id: 3, name: '', rd: '', rt: '' },
-        ];
+        function getNetwork(ip, mask) {
+            return ipToInt(ip) & ipToInt(mask);
+        }
 
-        // Global Route Reflector State
-        let isRouteReflector = false;
-        // Global BGP AS
-        let globalBgpAs = '';
+        function validateTopology() {
+            const errors = []; // [{ deviceId, interfaceId, message }]
 
-        /**
-         * Returns HTML markup for Cisco Config Generator
-         */
-        function getCiscoGeneratorHtml() {
-            // --- VRF Input Generation ---
-            let vrfInputs = '';
-            vrfDefinitions.forEach(vrf => {
-                vrfInputs += `
-                    <div class="p-4 bg-white rounded border border-gray-200 shadow-sm">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-100">VRF ${vrf.id} Definition</h4>
-                        <div class="mb-3">
-                            <label for="cisco-vrfName${vrf.id}" class="block text-xs font-medium text-gray-600 mb-1">Name</label>
-                            <input type="text" id="cisco-vrfName${vrf.id}" value="${vrf.name}"
-                                class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                placeholder="e.g. CUST_VRF_A"
-                                oninput="updateVrfState(${vrf.id}, 'name', this.value); updateVrfDropdowns(); generateConfig();">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label for="cisco-vrfRD${vrf.id}" class="block text-xs font-medium text-gray-600 mb-1">Route Distinguisher (RD)</label>
-                                <input type="text" id="cisco-vrfRD${vrf.id}" value="${vrf.rd}"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                    placeholder="e.g. 65000:1"
-                                    oninput="updateVrfState(${vrf.id}, 'rd', this.value); generateConfig();">
-                            </div>
-                            <div>
-                                <label for="cisco-vrfRT${vrf.id}" class="block text-xs font-medium text-gray-600 mb-1">Route Target (RT)</label>
-                                <input type="text" id="cisco-vrfRT${vrf.id}" value="${vrf.rt}"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                    placeholder="e.g. 65000:10"
-                                    oninput="updateVrfState(${vrf.id}, 'rt', this.value); generateConfig();">
-                            </div>
-                        </div>
-                    </div>
-                `;
+            // 1. Check IP Overlaps within devices
+            devices.forEach(dev => {
+                const usedRanges = [];
+                dev.interfaces.filter(i => i.enabled && i.ip && i.mask).forEach(intf => {
+                    const net = getNetwork(intf.ip, intf.mask);
+                    // Simple overlap check logic could be complex (ranges).
+                    // For now, let's just check exact duplicate IPs as a basic sanity check
+                    // Or subnet mismatch is the requested feature.
+                });
             });
 
-            // --- BGP Global Input Generation ---
-            const bgpGlobalInput = `
-                <div class="space-y-4">
-                    <!-- Global BGP AS -->
-                    <div>
-                        <label for="cisco-globalBgpAs" class="block text-xs font-medium text-gray-600 mb-1">Router BGP AS</label>
-                        <input type="number" id="cisco-globalBgpAs" value="${globalBgpAs || ''}" min="1" max="65535"
-                            class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                            placeholder="e.g. 65000"
-                            oninput="updateGlobalBgpAs(this.value); generateConfig();">
-                    </div>
+            // 2. Check Connection Subnet Mismatch
+            devices.forEach(dev => {
+                dev.interfaces.forEach(intf => {
+                    if (intf.connectedTo) { // { deviceId, interfaceId }
+                        const remoteDev = devices.find(d => d.id == intf.connectedTo.deviceId);
+                        if (remoteDev) {
+                            const remoteIntf = remoteDev.interfaces.find(i => i.id == intf.connectedTo.interfaceId);
+                            if (remoteIntf && intf.enabled && remoteIntf.enabled && intf.ip && intf.mask && remoteIntf.ip && remoteIntf.mask) {
 
-                    <!-- Route Reflector Checkbox -->
-                    <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded border border-gray-200">
-                        <input type="checkbox" id="cisco-isRouteReflector" ${isRouteReflector ? 'checked' : ''}
-                            class="mt-1 cursor-pointer"
-                            onchange="updateRouteReflector(this.checked); generateConfig();">
-                        <div>
-                            <label for="cisco-isRouteReflector" class="text-sm font-medium text-gray-700 cursor-pointer block">
-                                Enable Route Reflector (RR)
-                            </label>
-                            <p class="text-xs text-gray-500 mt-1">Configures neighbors as 'route-reflector-client'.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+                                const net1 = getNetwork(intf.ip, intf.mask);
+                                const net2 = getNetwork(remoteIntf.ip, remoteIntf.mask);
 
-            return `
-                <div id="cisco-tool-container" class="max-w-4xl mx-auto">
-
-                    <!-- Device Type Toggle -->
-                    <div class="flex justify-center mb-6">
-                        <div class="bg-gray-100 p-1 rounded-lg flex space-x-1">
-                            <button class="sub-tab ${deviceType === 'router' ? 'active' : 'inactive'}"
-                                onclick="setDeviceType('router')">
-                                Router Config
-                            </button>
-                            <button class="sub-tab ${deviceType === 'switch' ? 'active' : 'inactive'}"
-                                onclick="setDeviceType('switch')">
-                                Switch Config
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Global Settings -->
-                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Global Configuration</h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="cisco-hostname" class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
-                                <input type="text" id="cisco-hostname"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400"
-                                    placeholder="e.g. RTR-EDGE-01" required oninput="generateConfig()">
-                            </div>
-                            <div class="space-y-3 pt-4">
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="cisco-includeBoilerplate" checked
-                                        class="mr-2 cursor-pointer"
-                                        onchange="generateConfig()">
-                                    <label for="cisco-includeBoilerplate" class="text-sm text-gray-700 cursor-pointer">Include Standard Boilerplate</label>
-                                </div>
-
-                                <!-- MPLS Global Toggle -->
-                                <div id="mpls-global-container" class="flex items-center ${deviceType === 'router' ? '' : 'hidden'}">
-                                    <input type="checkbox" id="cisco-mplsGlobal" ${mplsGlobal ? 'checked' : ''}
-                                        class="mr-2 cursor-pointer"
-                                        onchange="updateMplsGlobal(this.checked); generateConfig();">
-                                    <label for="cisco-mplsGlobal" class="text-sm text-gray-700 cursor-pointer">Enable MPLS (Global)</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- VRF & BGP Settings (Router Only) -->
-                    <div id="router-advanced-settings" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 ${deviceType === 'router' ? '' : 'hidden'}">
-                        <div class="section-highlight p-5 rounded-lg">
-                            <h3 class="text-md font-bold text-gray-800 mb-2">VRF Definitions</h3>
-                            <p class="text-xs text-gray-500 mb-4">Define Virtual Routing and Forwarding instances.</p>
-                            <div class="space-y-4">
-                                ${vrfInputs}
-                            </div>
-                        </div>
-
-                        <div class="section-highlight p-5 rounded-lg">
-                            <h3 class="text-md font-bold text-gray-800 mb-2">BGP Configuration</h3>
-                            <p class="text-xs text-gray-500 mb-4">Global Border Gateway Protocol settings.</p>
-                            ${bgpGlobalInput}
-                        </div>
-                    </div>
-
-                    <!-- Interface List -->
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Interfaces</h3>
-                    <div id="cisco-interfaceConfigs" class="space-y-4 mb-8">
-                        <!-- Dynamic inputs generated here -->
-                    </div>
-
-                    <!-- Add Interface Button -->
-                    <div class="flex justify-center mb-8">
-                        <button onclick="addInterface()" class="flex items-center gap-2 btn-secondary px-4 py-2 rounded-md shadow-sm text-sm font-medium transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add Interface
-                        </button>
-                    </div>
-
-                    <!-- Output Section -->
-                    <div class="mt-8">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Generated Configuration</h3>
-                            <span class="text-xs text-gray-500">IOS / IOS-XE Syntax</span>
-                        </div>
-                        <pre id="cisco-outputArea" class="output-area p-4 text-sm leading-relaxed min-h-[200px]">Awaiting input...</pre>
-
-                        <!-- Actions -->
-                        <div class="mt-4 flex flex-col items-center">
-                            <button id="cisco-copyButton" onclick="copyConfig()"
-                                class="w-full md:w-auto btn-primary font-medium py-2 px-6 rounded shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Copy to Clipboard
-                            </button>
-                            <div id="cisco-messageBox" class="mt-2 text-sm text-green-600 font-medium hidden">
-                                Configuration copied successfully!
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+                                if (net1 !== net2) {
+                                    errors.push({
+                                        deviceId: dev.id,
+                                        interfaceId: intf.id,
+                                        message: `Subnet Mismatch! Connected to ${remoteDev.name} (${remoteIntf.ip})`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+            return errors;
         }
 
-        // --- Placeholder Tool HTML ---
-        function getPlaceholderHtml() {
-            return `
-                <div class="max-w-2xl mx-auto">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-gray-800">Connection Diagnostics</h2>
-                        <div id="ping-status" class="status-badge inactive border border-gray-200">Idle</div>
-                    </div>
+        // --- APP LOGIC ---
 
-                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
-                        <div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Target Host / IP</label>
-                                <input id="ping-host" type="text" placeholder="example.com" value="example.com" class="w-full p-2 rounded enterprise-input" />
-                            </div>
-                            <div class="flex items-end">
-                                <span class="text-xs text-gray-500 italic pb-2">Uses HTTPS HEAD requests for latency measurement.</span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3 mb-4">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Count</label>
-                                <input id="ping-count" type="number" min="1" max="20" value="4" class="w-full p-2 rounded enterprise-input" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Timeout (ms)</label>
-                                <input id="ping-timeout" type="number" min="100" max="60000" value="2000" class="w-full p-2 rounded enterprise-input" />
-                            </div>
-                        </div>
-
-                        <div class="flex space-x-3 pt-2">
-                            <button id="ping-start" onclick="startPing()" class="flex-1 flex items-center justify-center gap-2 btn-primary font-medium py-2 px-4 rounded shadow-sm">
-                                <svg id="ping-spinner" class="animate-spin hidden h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                                <span id="ping-start-text">Start Diagnostics</span>
-                            </button>
-                            <button id="ping-stop" onclick="stopPing()" disabled class="flex-none btn-danger font-medium py-2 px-4 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">Stop</button>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Results</h3>
-                        <div id="ping-result-area" class="p-4 rounded border border-gray-300 bg-white text-sm font-mono h-40 overflow-auto text-gray-800 shadow-inner"></div>
-                        <div id="ping-summary" class="mt-3 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-900">
-                            Ready to start.
-                        </div>
-                    </div>
-                </div>
-            `;
+        function init() {
+            // Add default router if empty
+            if (devices.length === 0) addDevice('router');
         }
 
-        // --- Simple client-side Ping Tool (uses fetch timing) ---
-        let _pingAbort = null;
-        let _pingRunning = false;
+        function addDevice(type) {
+            const id = Date.now().toString();
+            const num = devices.filter(d => d.type === type).length + 1;
+            const newDevice = {
+                id: id,
+                type: type,
+                name: `${type.toUpperCase()}-${num}`,
+                global: { mpls: false, bgpAs: '' },
+                interfaces: [
+                    createInterface(1, type),
+                    createInterface(2, type)
+                ]
+            };
+            devices.push(newDevice);
+            renderDeviceList();
+            selectDevice(id);
+        }
 
-        async function pingOnce(url, timeoutMs) {
-            const start = performance.now();
-            const controller = new AbortController();
-            const signal = controller.signal;
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                // Use HEAD to reduce payload; use no-cors so timing works even when CORS is restrictive
-                await fetch(url, { method: 'HEAD', mode: 'no-cors', signal });
-                const rtt = Math.round(performance.now() - start);
-                clearTimeout(timer);
-                return { success: true, time: rtt };
-            } catch (err) {
-                clearTimeout(timer);
-                if (err && err.name === 'AbortError') return { success: false, error: 'timeout' };
-                return { success: false, error: err && err.message ? err.message : String(err) };
+        function createInterface(id, type) {
+            return {
+                id: id,
+                prefix: "Gi",
+                number: `0/${id}`,
+                enabled: false,
+                ip: "", mask: "",
+                mode: type === 'switch' ? 'access' : 'routed',
+                vlan: "", trunkVlans: "",
+                connectedTo: null // { deviceId, interfaceId }
+            };
+        }
+
+        function deleteActiveDevice() {
+            if (!activeDeviceId) return;
+            devices = devices.filter(d => d.id !== activeDeviceId);
+            activeDeviceId = null;
+
+            // Clean up connections pointing to this device
+            devices.forEach(d => {
+                d.interfaces.forEach(i => {
+                    if (i.connectedTo && i.connectedTo.deviceId === activeDeviceId) {
+                        i.connectedTo = null;
+                    }
+                });
+            });
+
+            renderDeviceList();
+            renderConfigPanel();
+        }
+
+        function selectDevice(id) {
+            activeDeviceId = id;
+            renderDeviceList();
+            renderConfigPanel();
+        }
+
+        function updateHostname(val) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if (dev) {
+                dev.name = val;
+                renderDeviceList(); // Update name in sidebar
+                generateConfig();
             }
         }
 
-        async function startPing() {
-            if (_pingRunning) return;
-
-            const host = document.getElementById('ping-host').value.trim();
-            const count = parseInt(document.getElementById('ping-count').value, 10) || 4;
-            const timeout = parseInt(document.getElementById('ping-timeout').value, 10) || 2000;
-            const out = document.getElementById('ping-result-area');
-            const summary = document.getElementById('ping-summary');
-            const status = document.getElementById('ping-status');
-            const startBtn = document.getElementById('ping-start');
-            const stopBtn = document.getElementById('ping-stop');
-            const spinner = document.getElementById('ping-spinner');
-            const startText = document.getElementById('ping-start-text');
-
-            if (!host) return;
-
-            const url = `https://${host.replace(/\/+$/,'')}/`;
-
-            if (_pingAbort) {
-                _pingAbort.abort();
+        function updateGlobalSetting(key, val) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if (dev) {
+                dev.global[key] = val;
+                generateConfig();
             }
-            _pingAbort = new AbortController();
-            const globalSignal = _pingAbort.signal;
-
-            _pingRunning = true;
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            spinner.classList.remove('hidden');
-            startText.textContent = 'Running...';
-            status.textContent = 'Running';
-            status.className = 'status-badge active border border-green-200';
-
-            out.innerHTML = `<div class="text-blue-600 font-semibold mb-2">Targeting ${host} (${count} attempts)...</div>`;
-            summary.innerHTML = ' collecting data...';
-
-            const times = [];
-            let succeeded = 0;
-            let failed = 0;
-
-            for (let i = 1; i <= count; i++) {
-                if (globalSignal.aborted) {
-                    out.innerHTML += `<div class="text-orange-600">Diagnostics cancelled.</div>`;
-                    break;
-                }
-
-                const res = await pingOnce(url, timeout);
-                if (res.success) {
-                    succeeded++;
-                    times.push(res.time);
-                    out.innerHTML += `<div class="text-green-700">Reply ${i}: time=${res.time}ms</div>`;
-                } else {
-                    failed++;
-                    out.innerHTML += `<div class="text-red-600">Request ${i}: Failed (${res.error})</div>`;
-                }
-
-                // live summary
-                if (times.length) {
-                    const min = Math.min(...times);
-                    const max = Math.max(...times);
-                    const avg = Math.round(times.reduce((a,b) => a+b, 0)/times.length);
-                    summary.innerHTML = `Sent: ${i} | Received: ${succeeded} | Loss: ${Math.round(((i-succeeded)/i)*100)}% | Min/Avg/Max: ${min}/${avg}/${max} ms`;
-                } else {
-                    summary.innerHTML = `Sent: ${i} | Received: ${succeeded} | Loss: ${Math.round(((i-succeeded)/i)*100)}%`;
-                }
-
-                await new Promise(r => setTimeout(r, 200));
-            }
-
-            // finalize
-            const sent = succeeded + failed;
-            const loss = sent ? Math.round(((sent - succeeded) / sent) * 100) : 0;
-            const min = times.length ? Math.min(...times) : '-';
-            const max = times.length ? Math.max(...times) : '-';
-            const avg = times.length ? Math.round(times.reduce((a,b) => a+b, 0)/times.length) : '-';
-
-            summary.innerHTML = `
-                <div class="font-bold">Summary</div>
-                <div>Packets: Sent = ${sent}, Received = ${succeeded}, Lost = ${sent-succeeded} (${loss}% loss)</div>
-                <div>Round-trip min/avg/max = ${min}/${avg}/${max} ms</div>
-            `;
-
-            _pingAbort = null;
-            _pingRunning = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            spinner.classList.add('hidden');
-            startText.textContent = 'Start Diagnostics';
-            status.textContent = 'Idle';
-            status.className = 'status-badge inactive border border-gray-200';
-        }
-
-        function stopPing() {
-            const startBtn = document.getElementById('ping-start');
-            const stopBtn = document.getElementById('ping-stop');
-            const spinner = document.getElementById('ping-spinner');
-            const startText = document.getElementById('ping-start-text');
-            const status = document.getElementById('ping-status');
-
-            if (_pingAbort) {
-                _pingAbort.abort();
-                _pingAbort = null;
-            }
-
-            _pingRunning = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            spinner.classList.add('hidden');
-            startText.textContent = 'Start Diagnostics';
-            status.textContent = 'Idle';
-            status.className = 'status-badge inactive border border-gray-200';
-        }
-
-
-        // --- Cisco Generator JavaScript Functions ---
-
-        function updateVrfState(id, key, value) {
-            const vrf = vrfDefinitions.find(v => v.id === id);
-            if (vrf) {
-                vrf[key] = value.trim();
-            }
-        }
-
-        function updateGlobalBgpAs(value) {
-            globalBgpAs = (value || '').toString().trim();
-        }
-
-        function updateRouteReflector(isChecked) {
-            isRouteReflector = isChecked;
-        }
-
-        function updateMplsGlobal(isChecked) {
-            mplsGlobal = isChecked;
-        }
-
-        function setDeviceType(type) {
-            deviceType = type;
-            // Update UI tabs
-            renderTool('cisco');
         }
 
         function addInterface() {
-            // Persist current state
-            generateConfig();
-
-            const newId = interfaceData.length > 0 ? Math.max(...interfaceData.map(i => i.id)) + 1 : 1;
-
-            interfaceData.push({
-                id: newId, prefix: "Gi", number: "",
-                mode: "routed", // 'routed', 'access', 'trunk'
-                ip: "", mask: "",
-                vlan: "", trunkVlans: "", vrf: "",
-                enabled: false,
-                routingProtocol: 'none', ospfProcess: '', ospfArea: '',
-                bgpAs: '', bgpNeighborIp: '', bgpNeighborAs: '',
-                mplsEnabled: false
-            });
-
-            renderInterfaceForms();
-            // Scroll to the new block
-            setTimeout(() => {
-                const newBlock = document.getElementById(`cisco-int-block-${newId}`);
-                if (newBlock) newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-
-            generateConfig();
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if (!dev) return;
+            const newId = dev.interfaces.length > 0 ? Math.max(...dev.interfaces.map(i => i.id)) + 1 : 1;
+            dev.interfaces.push(createInterface(newId, dev.type));
+            renderConfigPanel();
         }
 
-        function removeInterface(id) {
-             generateConfig(); // Sync state before removal
-             interfaceData = interfaceData.filter(i => i.id !== id);
-             renderInterfaceForms();
-             generateConfig();
+        function removeInterface(intId) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if (!dev) return;
+            dev.interfaces = dev.interfaces.filter(i => i.id !== intId);
+            renderConfigPanel();
         }
 
-        function getFullInterfaceName(prefix, number) {
-            switch (prefix) {
-                case 'Fa': return `FastEthernet${number}`;
-                case 'Gi': return `GigabitEthernet${number}`;
-                case 'Te': return `TenGigabitEthernet${number}`;
-                case 'Lo': return `Loopback${number}`;
-                default: return `${prefix}${number}`;
-            }
-        }
+        function updateInterface(intId, field, value) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            if (!dev) return;
+            const intf = dev.interfaces.find(i => i.id === intId);
+            if (!intf) return;
 
-        function getDefinedVrfs() {
-            return vrfDefinitions.filter(vrf => vrf.name);
-        }
+            intf[field] = value;
 
-        function getGlobalBgpAs() {
-            return (globalBgpAs || '').toString().trim();
-        }
-
-        function updateVrfDropdowns() {
-            const definedVrfs = getDefinedVrfs();
-
-            // Note: Loops over all current interfaceData IDs
-            interfaceData.forEach(intData => {
-                const selectElement = document.getElementById(`cisco-int-vrf-select-${intData.id}`);
-                if (!selectElement) return;
-
-                const currentValue = selectElement.value;
-                selectElement.innerHTML = '';
-
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'No VRF';
-                selectElement.appendChild(defaultOption);
-
-                definedVrfs.forEach(vrf => {
-                    const option = document.createElement('option');
-                    option.value = vrf.name;
-                    option.textContent = vrf.name;
-                    selectElement.appendChild(option);
-                });
-
-                if (currentValue && definedVrfs.some(v => v.name === currentValue)) {
-                    selectElement.value = currentValue;
-                } else {
-                    selectElement.value = '';
-                }
-            });
-        }
-
-        function toggleProtocolFields(intId) {
-            const protocolSelect = document.getElementById(`cisco-int-protocol-${intId}`);
-            const ospfFields = document.getElementById(`cisco-int-ospf-fields-${intId}`);
-            const bgpFields = document.getElementById(`cisco-int-bgp-fields-${intId}`);
-
-            if(!protocolSelect) return;
-
-            const selectedProtocol = protocolSelect.value;
-
-            const index = interfaceData.findIndex(item => item.id === intId);
-            if (index !== -1) {
-                interfaceData[index].routingProtocol = selectedProtocol;
-            }
-
-            if (selectedProtocol === 'ospf') {
-                if(ospfFields) ospfFields.classList.remove('hidden');
-                if(bgpFields) bgpFields.classList.add('hidden');
-            } else if (selectedProtocol === 'bgp') {
-                if(ospfFields) ospfFields.classList.add('hidden');
-                if(bgpFields) bgpFields.classList.remove('hidden');
+            // Re-render only if necessary to avoid focus loss, otherwise just generate config
+            if (field === 'mode' || field === 'enabled') {
+                renderConfigPanel();
             } else {
-                if(ospfFields) ospfFields.classList.add('hidden');
-                if(bgpFields) bgpFields.classList.add('hidden');
+                generateConfig();
+                // If checking connectivity, trigger validation UI updates
+                if (field === 'ip' || field === 'mask') renderValidationErrors();
             }
         }
 
+        function updateConnection(intId, targetString) {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            const intf = dev.interfaces.find(i => i.id === intId);
+            if (!targetString) {
+                intf.connectedTo = null;
+            } else {
+                const [targetDevId, targetIntId] = targetString.split(':');
+                intf.connectedTo = { deviceId: targetDevId, interfaceId: parseInt(targetIntId) };
 
-        function renderInterfaceForms() {
-            const container = document.getElementById('cisco-interfaceConfigs');
-            if (!container) return;
-            container.innerHTML = '';
+                // Optional: Auto-link the other side? (User requested "connect ports", usually implies bidirectional)
+                // Let's do bidirectional linking for convenience
+                const remoteDev = devices.find(d => d.id === targetDevId);
+                const remoteIntf = remoteDev.interfaces.find(i => i.id == targetIntId);
+                if (remoteIntf) {
+                    remoteIntf.connectedTo = { deviceId: dev.id, interfaceId: intf.id };
+                }
+            }
+            renderValidationErrors();
+        }
 
-            interfaceData.forEach((intData) => {
-                const interfaceBlock = document.createElement('div');
-                interfaceBlock.id = `cisco-int-block-${intData.id}`;
+        // --- RENDERING ---
 
-                // Enterprise styling
-                interfaceBlock.className = `p-5 rounded-lg border transition-colors duration-200 ${intData.enabled ? 'bg-white border-green-500 shadow-sm' : 'bg-gray-50 border-gray-200'}`;
-
-                const enableCheckboxId = `cisco-enable-int-${intData.id}`;
-                const modeSelectId = `cisco-int-mode-${intData.id}`;
-
-                const useVlanId = `cisco-int-use-vlan-${intData.id}`; // Reused for subinterface in router mode
-                const vlanFieldsId = `cisco-int-vlan-fields-${intData.id}`;
-                const vrfSelectId = `cisco-int-vrf-select-${intData.id}`;
-                const protocolSelectId = `cisco-int-protocol-${intData.id}`;
-                const ospfFieldsId = `cisco-int-ospf-fields-${intData.id}`;
-                const bgpFieldsId = `cisco-int-bgp-fields-${intData.id}`;
-                const mplsCheckboxId = `cisco-int-mpls-${intData.id}`;
-
-                const isVlanSelected = !!intData.vlan && deviceType === 'router';
-                const isOspfSelected = intData.routingProtocol === 'ospf';
-                const isBgpSelected = intData.routingProtocol === 'bgp';
-
-                // Determine layout based on deviceType
-                let contentHTML = `
-                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                        <div class="flex items-center space-x-3">
-                            <input type="checkbox" id="${enableCheckboxId}" data-int-id="${intData.id}" class="cursor-pointer" ${intData.enabled ? 'checked' : ''}>
-                            <h3 class="text-md font-bold ${intData.enabled ? 'text-gray-900' : 'text-gray-400'}">Interface ${intData.id}</h3>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                             <span class="text-xs font-semibold px-2 py-1 rounded ${intData.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}">
-                                ${intData.enabled ? 'ACTIVE' : 'DISABLED'}
-                            </span>
-                            <button onclick="removeInterface(${intData.id})" class="text-gray-400 hover:text-red-500 transition-colors" title="Remove Interface">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="cisco-int-fields-${intData.id}" class="space-y-4 ${intData.enabled ? '' : 'opacity-50 pointer-events-none'}" data-int-id="${intData.id}">
-
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <!-- Type Selector -->
-                            <div class="w-full md:w-1/3">
-                                <label for="cisco-int-prefix-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Type</label>
-                                <select id="cisco-int-prefix-${intData.id}" class="w-full p-2 rounded enterprise-input text-sm" onchange="generateConfig()">
-                                    <option value="Gi">Gigabit (Gi)</option>
-                                    <option value="Fa">Fast (Fa)</option>
-                                    <option value="Te">TenGigabit (Te)</option>
-                                    <option value="Lo">Loopback (Lo)</option>
-                                </select>
-                            </div>
-                            <!-- Number Input -->
-                            <div class="w-full md:w-2/3">
-                                <label for="cisco-int-number-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Port Number</label>
-                                <input type="text" id="cisco-int-number-${intData.id}" value="${intData.number}"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                    placeholder="e.g. 0/1" oninput="generateConfig()">
-                            </div>
-                        </div>
-                `;
-
-                if (deviceType === 'router') {
-                    // --- ROUTER MODE FIELDS ---
-                    contentHTML += `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- IP Adresse -->
-                            <div>
-                                <label for="cisco-int-ip-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">IP Address</label>
-                                <input type="text" id="cisco-int-ip-${intData.id}" value="${intData.ip}"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                    placeholder="192.168.10.1" oninput="generateConfig()">
-                            </div>
-
-                            <!-- Subnet Maske -->
-                            <div>
-                                <label for="cisco-int-mask-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Subnet Mask</label>
-                                <input type="text" id="cisco-int-mask-${intData.id}" value="${intData.mask}"
-                                    class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm"
-                                    placeholder="255.255.255.0" oninput="generateConfig()">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- VRF SELECTOR -->
-                            <div>
-                                <label for="${vrfSelectId}" class="block text-xs font-medium text-gray-600 mb-1">VRF Forwarding</label>
-                                <select id="${vrfSelectId}" class="w-full p-2 rounded enterprise-input text-sm" onchange="generateConfig()">
-                                    <!-- Options populated by updateVrfDropdowns() -->
-                                </select>
-                            </div>
-
-                            <!-- ROUTING PROTOCOL SELECTOR -->
-                            <div>
-                                <label for="${protocolSelectId}" class="block text-xs font-medium text-gray-600 mb-1">Routing Protocol</label>
-                                <select id="${protocolSelectId}" class="w-full p-2 rounded enterprise-input text-sm"
-                                    onchange="toggleProtocolFields(${intData.id}); generateConfig();">
-                                    <option value="none">None</option>
-                                    <option value="ospf">OSPFv2</option>
-                                    <option value="bgp">BGP</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- OSPF Configuration Fields -->
-                        <div id="${ospfFieldsId}" class="p-4 rounded-lg bg-indigo-50 border border-indigo-100 ${isOspfSelected ? '' : 'hidden'}">
-                            <p class="text-xs font-bold text-indigo-700 mb-3 uppercase tracking-wider">OSPF Configuration</p>
-                            <div class="grid grid-cols-2 gap-4">
-                                <!-- Process ID -->
-                                <div>
-                                    <label for="cisco-int-ospf-process-${intData.id}" class="block text-xs font-medium text-indigo-600 mb-1">Process ID</label>
-                                    <input type="number" id="cisco-int-ospf-process-${intData.id}" min="1" value="${intData.ospfProcess}"
-                                        class="w-full p-2 text-sm rounded enterprise-input"
-                                        placeholder="e.g. 1" oninput="generateConfig()">
-                                </div>
-                                <!-- Area ID -->
-                                <div>
-                                    <label for="cisco-int-ospf-area-${intData.id}" class="block text-xs font-medium text-indigo-600 mb-1">Area ID</label>
-                                    <input type="text" id="cisco-int-ospf-area-${intData.id}" value="${intData.ospfArea}"
-                                        class="w-full p-2 text-sm rounded enterprise-input"
-                                        placeholder="e.g. 0" oninput="generateConfig()">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- BGP Configuration Fields -->
-                        <div id="${bgpFieldsId}" class="p-4 rounded-lg bg-orange-50 border border-orange-100 ${isBgpSelected ? '' : 'hidden'}">
-                            <p class="text-xs font-bold text-orange-700 mb-3 uppercase tracking-wider">BGP Configuration</p>
-                            <div class="grid grid-cols-2 gap-4">
-                                <!-- Neighbor IP -->
-                                <div>
-                                    <label for="cisco-int-bgp-neighbor-ip-${intData.id}" class="block text-xs font-medium text-orange-600 mb-1">Neighbor IP</label>
-                                    <input type="text" id="cisco-int-bgp-neighbor-ip-${intData.id}" value="${intData.bgpNeighborIp}"
-                                        class="w-full p-2 text-sm rounded enterprise-input"
-                                        placeholder="e.g. 10.0.0.2" oninput="generateConfig()">
-                                </div>
-                                <!-- Remote AS -->
-                                <div>
-                                    <label for="cisco-int-bgp-neighbor-as-${intData.id}" class="block text-xs font-medium text-orange-600 mb-1">Remote AS</label>
-                                    <input type="number" id="cisco-int-bgp-neighbor-as-${intData.id}" min="1" value="${intData.bgpNeighborAs}"
-                                        class="w-full p-2 text-sm rounded enterprise-input"
-                                        placeholder="e.g. 65002" oninput="generateConfig()">
-                                </div>
-                            </div>
-                        </div>
-
-                         <div class="flex items-center justify-between">
-                            <!-- VLAN Subinterface Option -->
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" id="${useVlanId}" class="cursor-pointer"
-                                    ${isVlanSelected ? 'checked' : ''} onchange="document.getElementById('${vlanFieldsId}').classList.toggle('hidden', !this.checked); generateConfig();">
-                                <label for="${useVlanId}" class="text-sm text-gray-700 cursor-pointer">Subinterface (Dot1Q)</label>
-                            </div>
-
-                            <!-- MPLS Interface Toggle -->
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" id="${mplsCheckboxId}" class="cursor-pointer"
-                                    ${intData.mplsEnabled ? 'checked' : ''} onchange="generateConfig()">
-                                <label for="${mplsCheckboxId}" class="text-sm text-gray-700 cursor-pointer">Enable MPLS</label>
-                            </div>
-                        </div>
-
-                        <div id="${vlanFieldsId}" class="mt-2 pl-4 border-l-2 border-gray-300 ${isVlanSelected ? '' : 'hidden'}">
-                            <label for="cisco-int-vlan-id-${intData.id}" class="block text-xs font-medium text-gray-500 mb-1">VLAN ID (1-4094)</label>
-                            <input type="number" id="cisco-int-vlan-id-${intData.id}" min="1" max="4094" value="${intData.vlan || ''}"
-                                class="w-24 p-2 text-sm rounded enterprise-input"
-                                placeholder="10" oninput="generateConfig()">
-                        </div>
-                    `;
-                } else {
-                    // --- SWITCH MODE FIELDS ---
-                    contentHTML += `
+        function renderDeviceList() {
+            const list = document.getElementById('device-list');
+            list.innerHTML = devices.map(d => `
+                <div onclick="selectDevice('${d.id}')" class="device-item p-3 border-b border-gray-50 ${d.id === activeDeviceId ? 'active' : ''}">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <label for="${modeSelectId}" class="block text-xs font-medium text-gray-600 mb-1">Switchport Mode</label>
-                            <select id="${modeSelectId}" class="w-full p-2 rounded enterprise-input text-sm" onchange="updateSwitchMode(${intData.id}, this.value); generateConfig();">
-                                <option value="access">Access</option>
-                                <option value="trunk">Trunk</option>
-                                <option value="routed">Routed Port (No Switchport)</option>
-                            </select>
+                            <div class="font-bold text-sm text-gray-800">${d.name}</div>
+                            <div class="text-xs text-gray-500">${d.type.toUpperCase()}</div>
                         </div>
-
-                        <div id="cisco-int-switch-access-${intData.id}" class="${intData.mode !== 'access' ? 'hidden' : ''}">
-                             <label for="cisco-int-access-vlan-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Access VLAN</label>
-                             <input type="number" id="cisco-int-access-vlan-${intData.id}" value="${intData.vlan}"
-                                class="w-full p-2 rounded enterprise-input text-sm" placeholder="10" oninput="generateConfig()">
-                        </div>
-
-                        <div id="cisco-int-switch-trunk-${intData.id}" class="${intData.mode !== 'trunk' ? 'hidden' : ''}">
-                             <label for="cisco-int-trunk-vlans-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Allowed VLANs (e.g. 10,20,30-40)</label>
-                             <input type="text" id="cisco-int-trunk-vlans-${intData.id}" value="${intData.trunkVlans || ''}"
-                                class="w-full p-2 rounded enterprise-input text-sm" placeholder="10,20" oninput="generateConfig()">
-                        </div>
-
-                        <div id="cisco-int-switch-routed-${intData.id}" class="${intData.mode !== 'routed' ? 'hidden' : ''}">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="cisco-int-ip-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">IP Address</label>
-                                    <input type="text" id="cisco-int-ip-${intData.id}" value="${intData.ip}"
-                                        class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm" placeholder="192.168.1.1" oninput="generateConfig()">
-                                </div>
-                                <div>
-                                    <label for="cisco-int-mask-${intData.id}" class="block text-xs font-medium text-gray-600 mb-1">Subnet Mask</label>
-                                    <input type="text" id="cisco-int-mask-${intData.id}" value="${intData.mask}"
-                                        class="w-full p-2 rounded enterprise-input placeholder-gray-400 text-sm" placeholder="255.255.255.0" oninput="generateConfig()">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                contentHTML += `</div>`; // Close fields wrapper
-
-                interfaceBlock.innerHTML = contentHTML;
-                container.appendChild(interfaceBlock);
-
-                // Initialize values
-                document.getElementById(`cisco-int-prefix-${intData.id}`).value = intData.prefix;
-
-                if (deviceType === 'switch') {
-                     document.getElementById(modeSelectId).value = intData.mode || 'access';
-                }
-
-                if (deviceType === 'router') {
-                    document.getElementById(protocolSelectId).value = intData.routingProtocol;
-                    toggleProtocolFields(intData.id);
-                }
-
-                // Add event listener for Enable/Disable
-                document.getElementById(enableCheckboxId).addEventListener('change', (e) => {
-                    const isChecked = e.target.checked;
-                    const fieldsContainer = document.getElementById(`cisco-int-fields-${intData.id}`);
-                    const statusBadge = interfaceBlock.querySelector('span');
-                    const title = interfaceBlock.querySelector('h3');
-
-                    interfaceBlock.classList.toggle('border-green-500', isChecked);
-                    interfaceBlock.classList.toggle('bg-white', isChecked);
-                    interfaceBlock.classList.toggle('shadow-sm', isChecked);
-
-                    interfaceBlock.classList.toggle('border-gray-200', !isChecked);
-                    interfaceBlock.classList.toggle('bg-gray-50', !isChecked);
-
-                    statusBadge.textContent = isChecked ? 'ACTIVE' : 'DISABLED';
-                    statusBadge.className = `text-xs font-semibold px-2 py-1 rounded ${isChecked ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}`;
-
-                    title.classList.toggle('text-gray-900', isChecked);
-                    title.classList.toggle('text-gray-400', !isChecked);
-
-                    fieldsContainer.classList.toggle('opacity-50', !isChecked);
-                    fieldsContainer.classList.toggle('pointer-events-none', !isChecked);
-                    generateConfig();
-                });
-
-                // Generic input watcher for Router mode
-                const inputsToWatch = [
-                    `cisco-int-prefix-${intData.id}`, `cisco-int-number-${intData.id}`,
-                    `cisco-int-ip-${intData.id}`, `cisco-int-mask-${intData.id}`,
-                    `cisco-int-vrf-select-${intData.id}`, `cisco-int-protocol-${intData.id}`,
-                    `cisco-int-ospf-process-${intData.id}`, `cisco-int-ospf-area-${intData.id}`,
-                    `cisco-int-bgp-neighbor-ip-${intData.id}`, `cisco-int-bgp-neighbor-as-${intData.id}`,
-                    `cisco-int-vlan-id-${intData.id}`, `cisco-int-mpls-${intData.id}`,
-                    // Switch inputs
-                    `cisco-int-access-vlan-${intData.id}`, `cisco-int-trunk-vlans-${intData.id}`
-                ];
-                inputsToWatch.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.addEventListener('change', generateConfig);
-                        el.addEventListener('input', generateConfig);
-                    }
-                });
-            });
-
-            if (deviceType === 'router') {
-                updateVrfDropdowns();
-                interfaceData.forEach((intData) => {
-                    const vrfSelectElement = document.getElementById(`cisco-int-vrf-select-${intData.id}`);
-                    if(vrfSelectElement) vrfSelectElement.value = intData.vrf;
-                });
-            }
+                        <div class="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">${d.interfaces.length} IFs</div>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function updateSwitchMode(id, mode) {
-            const index = interfaceData.findIndex(item => item.id === id);
-            if (index !== -1) {
-                interfaceData[index].mode = mode;
+        function renderConfigPanel() {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            const panel = document.getElementById('config-panel');
+            const empty = document.getElementById('empty-state');
 
-                // Toggle visibility
-                document.getElementById(`cisco-int-switch-access-${id}`).classList.toggle('hidden', mode !== 'access');
-                document.getElementById(`cisco-int-switch-trunk-${id}`).classList.toggle('hidden', mode !== 'trunk');
-                document.getElementById(`cisco-int-switch-routed-${id}`).classList.toggle('hidden', mode !== 'routed');
-            }
-        }
-
-
-        function getBoilerplateStart(hostname) {
-            const date = new Date().toISOString().slice(0, 10);
-            return `Building configuration...
-
-Current configuration : 1337 bytes
-!
-! Last configuration change at ${date}
-!
-version 15.9
-service timestamps debug datetime msec
-service timestamps log datetime msec
-no service password-encryption
-!
-hostname ${hostname}
-!
-boot-start-marker
-boot-end-marker
-!
-!
-!
-no aaa new-model
-!
-!
-mmi polling-interval 60
-no mmi auto-configure
-no mmi pvc
-mmi snmp-timeout 180
-!
-!
-!
-ip cef
-no ipv6 cef
-!
-multilink bundle-name authenticated
-!
-!
-redundancy
-!
-!
-!
-`;
-        }
-
-        function getBoilerplateEnd() {
-            const bannerText = `**************************************************************************
-* GENERATED CONFIGURATION - FOR EVALUATION ONLY *
-**************************************************************************`;
-
-            return `
-ip forward-protocol nd
-!
-!
-no ip http server
-no ip http secure-server
-!
-ipv6 ioam timestamp
-!
-!
-control-plane
-!
-banner exec ^C
-${bannerText}^C
-banner incoming ^C
-${bannerText}^C
-banner login ^C
-${bannerText}^C
-!
-line con 0
-line aux 0
-line vty 0 4
- login
- transport input none
-!
-no scheduler allocate
-!
-end\n`;
-        }
-
-        function generateConfig() {
-            if (currentToolId !== 'cisco') return;
-
-            const hostname = document.getElementById('cisco-hostname').value.trim();
-            const includeBoilerplate = document.getElementById('cisco-includeBoilerplate').checked;
-            const outputArea = document.getElementById('cisco-outputArea');
-
-            let config = "";
-            let errors = [];
-            let interfaceConfigs = "";
-            let configuredInterfacesCount = 0;
-            let bgpNeighbors = new Set();
-
-            const definedVrfs = getDefinedVrfs();
-            const globalBgpAs = getGlobalBgpAs();
-            const isRR = isRouteReflector;
-
-            if (!hostname) { errors.push("Error: Hostname is required."); }
-
-            interfaceData.forEach((currentIntData) => {
-                const i = currentIntData.id;
-
-                // Common fields - Read from DOM if available (rendered)
-                if (document.getElementById(`cisco-enable-int-${i}`)) {
-                     currentIntData.enabled = document.getElementById(`cisco-enable-int-${i}`).checked;
-                     currentIntData.prefix = document.getElementById(`cisco-int-prefix-${i}`).value.trim();
-                     currentIntData.number = document.getElementById(`cisco-int-number-${i}`).value.trim();
-                }
-
-                if (currentIntData.enabled) {
-                    configuredInterfacesCount++;
-                    const selectedPrefix = currentIntData.prefix;
-                    const number = currentIntData.number;
-
-                    if (!selectedPrefix || !number) {
-                        errors.push(`Interface #${i}: Missing Type or Number.`);
-                        return; // continue
-                    }
-
-                    let baseIntName = getFullInterfaceName(selectedPrefix, number);
-                    let fullIntName = baseIntName;
-
-                    if (deviceType === 'router') {
-                        // --- ROUTER LOGIC ---
-                        currentIntData.ip = document.getElementById(`cisco-int-ip-${i}`)?.value.trim();
-                        currentIntData.mask = document.getElementById(`cisco-int-mask-${i}`)?.value.trim();
-                        currentIntData.vrf = document.getElementById(`cisco-int-vrf-select-${i}`)?.value.trim();
-                        currentIntData.vlan = document.getElementById(`cisco-int-use-vlan-${i}`)?.checked ? (document.getElementById(`cisco-int-vlan-id-${i}`)?.value.trim() || '') : '';
-                        currentIntData.mplsEnabled = document.getElementById(`cisco-int-mpls-${i}`)?.checked;
-
-                        currentIntData.routingProtocol = document.getElementById(`cisco-int-protocol-${i}`)?.value.trim() || 'none';
-                        currentIntData.ospfProcess = document.getElementById(`cisco-int-ospf-process-${i}`)?.value.trim();
-                        currentIntData.ospfArea = document.getElementById(`cisco-int-ospf-area-${i}`)?.value.trim();
-                        currentIntData.bgpNeighborIp = document.getElementById(`cisco-int-bgp-neighbor-ip-${i}`)?.value.trim();
-                        currentIntData.bgpNeighborAs = document.getElementById(`cisco-int-bgp-neighbor-as-${i}`)?.value.trim();
-
-                        // Validation
-                        if (currentIntData.vlan && (!currentIntData.vlan || isNaN(currentIntData.vlan))) {
-                            errors.push(`Interface #${i}: Invalid VLAN ID.`);
-                        }
-                        if (currentIntData.vrf && !definedVrfs.some(v => v.name === currentIntData.vrf)) {
-                            errors.push(`Interface #${i}: Undefined VRF.`);
-                        }
-
-                        // Config Generation
-                        let intConfig = "";
-
-                        if (currentIntData.vlan && selectedPrefix !== 'Lo') {
-                             fullIntName = `${baseIntName}.${currentIntData.vlan}`;
-                             intConfig += `interface ${fullIntName}\n`;
-                             intConfig += ` description ** DATA VLAN ${currentIntData.vlan} **\n`;
-                             intConfig += ` encapsulation dot1Q ${currentIntData.vlan}\n`;
-                        } else {
-                             intConfig += `interface ${fullIntName}\n`;
-                        }
-
-                        if (currentIntData.vrf) {
-                            intConfig += ` vrf forwarding ${currentIntData.vrf}\n`;
-                        }
-
-                        if (currentIntData.ip && currentIntData.mask) {
-                            intConfig += ` ip address ${currentIntData.ip} ${currentIntData.mask}\n`;
-                        } else {
-                            if (!currentIntData.vlan) errors.push(`Interface #${i}: IP and Mask required.`);
-                        }
-
-                        if (currentIntData.mplsEnabled) {
-                            intConfig += ` mpls ip\n`;
-                        }
-
-                        if (currentIntData.routingProtocol === 'ospf') {
-                            const vrf_part = currentIntData.vrf ? `vrf ${currentIntData.vrf} ` : '';
-                            intConfig += ` ip ospf ${currentIntData.ospfProcess} ${vrf_part}area ${currentIntData.ospfArea}\n`;
-                        } else if (currentIntData.routingProtocol === 'bgp') {
-                            if(currentIntData.bgpNeighborIp && currentIntData.bgpNeighborAs) {
-                                bgpNeighbors.add(JSON.stringify({ ip: currentIntData.bgpNeighborIp, as: currentIntData.bgpNeighborAs, vrf: currentIntData.vrf }));
-                            }
-                        }
-
-                        intConfig += ` no shutdown\n!\n`;
-                        interfaceConfigs += intConfig;
-
-                    } else {
-                        // --- SWITCH LOGIC ---
-                        currentIntData.mode = document.getElementById(`cisco-int-mode-${i}`)?.value;
-                        currentIntData.vlan = document.getElementById(`cisco-int-access-vlan-${i}`)?.value.trim(); // Access VLAN
-                        currentIntData.trunkVlans = document.getElementById(`cisco-int-trunk-vlans-${i}`)?.value.trim();
-                        currentIntData.ip = document.getElementById(`cisco-int-ip-${i}`)?.value.trim(); // Routed IP
-                        currentIntData.mask = document.getElementById(`cisco-int-mask-${i}`)?.value.trim(); // Routed Mask
-
-                        let intConfig = `interface ${fullIntName}\n`;
-
-                        if (currentIntData.mode === 'access') {
-                            intConfig += ` switchport mode access\n`;
-                            if (currentIntData.vlan) {
-                                intConfig += ` switchport access vlan ${currentIntData.vlan}\n`;
-                            }
-                        } else if (currentIntData.mode === 'trunk') {
-                            intConfig += ` switchport trunk encapsulation dot1q\n`; // Common legacy command, harmless on newer
-                            intConfig += ` switchport mode trunk\n`;
-                            if (currentIntData.trunkVlans) {
-                                intConfig += ` switchport trunk allowed vlan ${currentIntData.trunkVlans}\n`;
-                            }
-                        } else if (currentIntData.mode === 'routed') {
-                            intConfig += ` no switchport\n`;
-                            if (currentIntData.ip && currentIntData.mask) {
-                                intConfig += ` ip address ${currentIntData.ip} ${currentIntData.mask}\n`;
-                            }
-                        }
-
-                        intConfig += ` no shutdown\n!\n`;
-                        interfaceConfigs += intConfig;
-                    }
-                }
-            });
-
-            if (configuredInterfacesCount === 0 && errors.length === 0) {
-                 errors.push("No active interfaces.");
-            }
-
-            if (errors.length > 0) {
-                outputArea.textContent = "! CONFIGURATION CHECK FAILED\n\n" + errors.map(e => "! " + e).join('\n');
-                outputArea.style.color = '#ef4444';
+            if (!dev) {
+                panel.classList.add('hidden');
+                empty.classList.remove('hidden');
                 return;
             }
 
-            // Build Global Config
-            if (includeBoilerplate) {
-                config += getBoilerplateStart(hostname);
+            panel.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            document.getElementById('active-device-title').innerText = `${dev.type === 'router' ? 'Router' : 'Switch'} Config: ${dev.name}`;
+            document.getElementById('dev-hostname').value = dev.name;
+
+            // Global Toggles
+            const routerGlobals = document.getElementById('router-globals');
+            if (dev.type === 'router') {
+                routerGlobals.classList.remove('hidden');
+                document.getElementById('dev-mpls').checked = dev.global.mpls || false;
+                document.getElementById('dev-bgp-as').value = dev.global.bgpAs || '';
             } else {
-                config += `hostname ${hostname}\n!\n`;
+                routerGlobals.classList.add('hidden');
             }
 
-            if (mplsGlobal && deviceType === 'router') {
-                config += `mpls ip\n!\n`;
-            }
+            // Interfaces
+            const container = document.getElementById('interface-list');
+            container.innerHTML = dev.interfaces.map(intf => renderInterfaceCard(dev, intf)).join('');
 
-            // VRF Block (Router Only)
-            if (deviceType === 'router' && definedVrfs.some(v => v.name)) {
-                config += `! VRF DEFINITIONS\n`;
-                definedVrfs.filter(v => v.name).forEach(vrf => {
-                    config += `vrf definition ${vrf.name}\n`;
-                    config += ` rd ${vrf.rd}\n`;
-                    config += ` route-target export ${vrf.rt}\n`;
-                    config += ` route-target import ${vrf.rt}\n`;
-                    config += ` address-family ipv4\n`;
-                    config += ` exit-address-family\n`;
-                    config += `!\n`;
+            generateConfig();
+            renderValidationErrors();
+        }
+
+        function renderInterfaceCard(dev, intf) {
+            // Build Connection Options
+            // Filter out self
+            const connectionOptions = [`<option value="">-- Disconnected --</option>`];
+            devices.filter(d => d.id !== dev.id).forEach(d => {
+                d.interfaces.forEach(i => {
+                    const selected = intf.connectedTo && intf.connectedTo.deviceId == d.id && intf.connectedTo.interfaceId == i.id ? 'selected' : '';
+                    connectionOptions.push(`<option value="${d.id}:${i.id}" ${selected}>${d.name} - ${i.prefix}${i.number}</option>`);
                 });
-                config += `\n`;
+            });
+
+            // Specific Fields based on Type/Mode
+            let typeSpecificFields = '';
+            if (dev.type === 'router') {
+                typeSpecificFields = `
+                    <div class="grid grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500">IP Address</label>
+                            <input type="text" value="${intf.ip}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="192.168.1.1" onchange="updateInterface(${intf.id}, 'ip', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500">Subnet Mask</label>
+                            <input type="text" value="${intf.mask}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="255.255.255.0" onchange="updateInterface(${intf.id}, 'mask', this.value)">
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Switch
+                typeSpecificFields = `
+                    <div class="mt-2">
+                        <label class="block text-xs font-medium text-gray-500">Mode</label>
+                        <select onchange="updateInterface(${intf.id}, 'mode', this.value)" class="w-full p-1.5 rounded enterprise-input text-sm mb-2">
+                            <option value="access" ${intf.mode === 'access' ? 'selected' : ''}>Access</option>
+                            <option value="trunk" ${intf.mode === 'trunk' ? 'selected' : ''}>Trunk</option>
+                        </select>
+                        ${intf.mode === 'access' ? `
+                            <label class="block text-xs font-medium text-gray-500">Access VLAN</label>
+                            <input type="number" value="${intf.vlan}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="10" onchange="updateInterface(${intf.id}, 'vlan', this.value)">
+                        ` : `
+                            <label class="block text-xs font-medium text-gray-500">Allowed VLANs</label>
+                            <input type="text" value="${intf.trunkVlans}" class="w-full p-1.5 rounded enterprise-input text-sm" placeholder="10,20" onchange="updateInterface(${intf.id}, 'trunkVlans', this.value)">
+                        `}
+                    </div>
+                `;
             }
 
-            // BGP Block (Router Only)
-            const parsedNeighbors = Array.from(bgpNeighbors).map(n => JSON.parse(n));
-            if (deviceType === 'router' && parsedNeighbors.length > 0 && globalBgpAs) {
-                config += `! BGP CONFIGURATION\n`;
-                config += `router bgp ${globalBgpAs}\n`;
-                config += ` bgp log-neighbor changes\n`;
+            return `
+                <div class="enterprise-card p-4 border-l-4 ${intf.enabled ? 'border-l-green-500' : 'border-l-gray-300'}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" ${intf.enabled ? 'checked' : ''} onchange="updateInterface(${intf.id}, 'enabled', this.checked)">
+                            <div class="flex gap-2">
+                                <select onchange="updateInterface(${intf.id}, 'prefix', this.value)" class="p-1 rounded border text-sm">
+                                    <option value="Gi" ${intf.prefix==='Gi'?'selected':''}>Gi</option>
+                                    <option value="Fa" ${intf.prefix==='Fa'?'selected':''}>Fa</option>
+                                    <option value="Te" ${intf.prefix==='Te'?'selected':''}>Te</option>
+                                </select>
+                                <input type="text" value="${intf.number}" class="w-16 p-1 rounded border text-sm" onchange="updateInterface(${intf.id}, 'number', this.value)">
+                            </div>
+                        </div>
+                        <button onclick="removeInterface(${intf.id})" class="text-gray-400 hover:text-red-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
 
-                const vrfNeighbors = parsedNeighbors.filter(n => n.vrf);
-                const globalNeighbors = parsedNeighbors.filter(n => !n.vrf);
+                    ${typeSpecificFields}
 
-                globalNeighbors.forEach(neighbor => {
-                    config += ` neighbor ${neighbor.ip} remote-as ${neighbor.as}\n`;
-                    if (isRR) config += ` neighbor ${neighbor.ip} route-reflector-client\n`;
-                });
+                    <div class="mt-3 pt-3 border-t border-gray-100 bg-gray-50 p-2 rounded">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Topology Connection</label>
+                        <select onchange="updateConnection(${intf.id}, this.value)" class="w-full p-1.5 rounded border border-gray-300 text-sm">
+                            ${connectionOptions.join('')}
+                        </select>
+                        <div id="validation-msg-${dev.id}-${intf.id}" class="validation-error"></div>
+                    </div>
+                </div>
+            `;
+        }
 
-                if (vrfNeighbors.length > 0) {
-                    const neighborsByVrf = vrfNeighbors.reduce((acc, neighbor) => {
-                        if (!acc[neighbor.vrf]) acc[neighbor.vrf] = [];
-                        acc[neighbor.vrf].push(neighbor);
-                        return acc;
-                    }, {});
+        function renderValidationErrors() {
+            // Clear all first
+            document.querySelectorAll('.validation-error').forEach(el => el.innerText = '');
 
-                    for (const vrfName in neighborsByVrf) {
-                        config += ` address-family ipv4 vrf ${vrfName}\n`;
-                        neighborsByVrf[vrfName].forEach(neighbor => {
-                            config += `  neighbor ${neighbor.ip} remote-as ${neighbor.as}\n`;
-                            config += `  neighbor ${neighbor.ip} activate\n`;
-                            if (isRR) config += `  neighbor ${neighbor.ip} route-reflector-client\n`;
-                        });
-                        config += ` exit-address-family\n`;
-                    }
+            const errors = validateTopology();
+            errors.forEach(err => {
+                // err: { deviceId, interfaceId, message }
+                const el = document.getElementById(`validation-msg-${err.deviceId}-${err.interfaceId}`);
+                if (el) {
+                    el.innerText = err.message;
                 }
-                config += `!\n`;
+            });
+        }
+
+        // --- CONFIG GENERATION ---
+
+        function generateConfig() {
+            const dev = devices.find(d => d.id === activeDeviceId);
+            const output = document.getElementById('output-area');
+            if (!dev) return;
+
+            let config = `hostname ${dev.name}\n!\n`;
+
+            if (dev.type === 'router') {
+                if (dev.global.mpls) config += `mpls ip\n`;
+                if (dev.global.bgpAs) config += `router bgp ${dev.global.bgpAs}\n bgp log-neighbor-changes\n!\n`;
             }
 
-            config += interfaceConfigs;
+            dev.interfaces.forEach(intf => {
+                if (!intf.enabled) return;
 
-            if (includeBoilerplate) {
-                config += getBoilerplateEnd();
-            }
+                config += `interface ${intf.prefix}${intf.number}\n`;
 
-            outputArea.style.color = '#f3f4f6';
-            outputArea.textContent = config.trim();
+                if (dev.type === 'switch') {
+                    if (intf.mode === 'access') {
+                        config += ` switchport mode access\n`;
+                        if (intf.vlan) config += ` switchport access vlan ${intf.vlan}\n`;
+                    } else {
+                        config += ` switchport trunk encapsulation dot1q\n switchport mode trunk\n`;
+                        if (intf.trunkVlans) config += ` switchport trunk allowed vlan ${intf.trunkVlans}\n`;
+                    }
+                } else {
+                    // Router
+                    if (intf.ip && intf.mask) config += ` ip address ${intf.ip} ${intf.mask}\n`;
+                    if (dev.global.mpls) config += ` mpls ip\n`;
+                }
+
+                config += ` no shutdown\n!\n`;
+            });
+
+            config += `end`;
+            output.textContent = config;
         }
 
         function copyConfig() {
-            if (currentToolId !== 'cisco') return;
-
-            const outputArea = document.getElementById('cisco-outputArea');
-            const messageBox = document.getElementById('cisco-messageBox');
-            const configText = outputArea.textContent;
-
-            if (configText.includes("CONFIGURATION CHECK FAILED") || configText.includes("Awaiting input...") || configText.trim() === "") {
-                return;
-            }
-
-            const textarea = document.createElement('textarea');
-            textarea.value = configText;
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                document.execCommand('copy');
-                messageBox.classList.remove('hidden');
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 2000);
-            } catch (err) {
-                console.error('Copy failed:', err);
-                const originalContent = outputArea.textContent;
-                outputArea.textContent = "! COPY FAILED - Please copy manually.";
-                outputArea.style.color = '#ef4444';
-                setTimeout(() => {
-                    outputArea.textContent = originalContent;
-                    outputArea.style.color = '#f3f4f6';
-                }, 3000);
-            } finally {
-                document.body.removeChild(textarea);
-            }
+            const output = document.getElementById('output-area').innerText;
+            navigator.clipboard.writeText(output);
+            alert("Config copied!");
         }
 
-        function initCiscoGenerator() {
-             updateVrfDropdowns();
-             const globalAsInput = document.getElementById('cisco-globalBgpAs');
-             const rrCheckbox = document.getElementById('cisco-isRouteReflector');
-             const mplsCheckbox = document.getElementById('cisco-mplsGlobal');
+        // Start
+        init();
 
-             if (globalAsInput) {
-                 if (!globalBgpAs) {
-                     const fallback = interfaceData.find(item => item.bgpAs)?.bgpAs || '';
-                     if (fallback) globalBgpAs = fallback;
-                 }
-                 globalAsInput.value = globalBgpAs || '';
-             }
-             if (rrCheckbox) rrCheckbox.checked = isRouteReflector;
-             if (mplsCheckbox) mplsCheckbox.checked = mplsGlobal;
-
-             renderInterfaceForms();
-             generateConfig();
-        }
-
-        // --- Multi-Tool Logic ---
-
-        function renderTool(toolId) {
-            currentToolId = toolId;
-            let htmlContent = '';
-
-            document.querySelectorAll('.nav-link').forEach(button => {
-                if (button.getAttribute('data-tool') === toolId) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-
-            switch (toolId) {
-                case 'cisco':
-                    htmlContent = getCiscoGeneratorHtml();
-                    appContent.innerHTML = htmlContent;
-                    initCiscoGenerator();
-                    break;
-                case 'placeholder':
-                    htmlContent = getPlaceholderHtml();
-                    appContent.innerHTML = htmlContent;
-                    break;
-                default:
-                    appContent.innerHTML = getPlaceholderHtml();
-                    break;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTool('cisco');
-        });
     </script>
 </body>
 </html>
