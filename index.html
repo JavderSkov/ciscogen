@@ -182,6 +182,12 @@
             if(intf) {
                 intf[field] = val;
                 generateConfig();
+
+                // CRITICAL FIX: Re-render for structural changes
+                if(['enabled', 'mode', 'prefix'].includes(field)) {
+                    renderApp();
+                }
+
                 if(['ip','mask'].includes(field)) renderValidationErrors();
             }
         }
