@@ -95,9 +95,6 @@
 
         // --- STATE MANAGEMENT ---
         function init() {
-            if (devices.length === 0) {
-                addDevice('router');
-            }
             renderApp();
         }
 
@@ -107,14 +104,14 @@
             const newDevice = {
                 id: id,
                 type: type,
-                name: type === 'router' ? `RTR-EDGE-0${num}` : `SW-ACCESS-0${num}`,
+                name: '',
                 global: { mpls: false, bgpAs: '', rr: false },
                 vrfs: [
                     { id: 1, name: '', rd: '', rt: '' },
                     { id: 2, name: '', rd: '', rt: '' },
                     { id: 3, name: '', rd: '', rt: '' }
                 ],
-                interfaces: [createInterface(1, type), createInterface(2, type)]
+                interfaces: []
             };
             devices.push(newDevice);
             activeDeviceId = id;
@@ -257,14 +254,6 @@
                                 <input type="text" value="${activeDevice.name}" class="w-full p-2 rounded enterprise-input" oninput="updateDevice('name', this.value)">
                             </div>
                             <div class="space-y-2 pt-4">
-                                <label class="flex items-center space-x-2 text-sm text-gray-700">
-                                    <input type="checkbox" checked disabled> <span>Include Standard Boilerplate</span>
-                                </label>
-                                ${activeSubTab === 'router' ? `
-                                    <label class="flex items-center space-x-2 text-sm text-gray-700">
-                                        <input type="checkbox" ${activeDevice.global.mpls?'checked':''} onchange="updateGlobal('mpls', this.checked)"> <span>Enable MPLS (Global)</span>
-                                    </label>
-                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -431,9 +420,13 @@
                     <div class="mt-8">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-bold text-gray-700 uppercase">Generated Configuration</h3>
-                            <button onclick="copyConfig()" class="text-blue-600 text-sm hover:underline">Copy</button>
+                            <button onclick="copyConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors">Copy</button>
                         </div>
                         <pre id="output-area" class="output-area p-4 text-sm leading-relaxed min-h-[200px]"></pre>
+                        <div class="mt-4">
+                            <h3 class="text-sm font-bold text-gray-700 uppercase mb-2">Network Topology</h3>
+                            <div id="topology-diagram" class="bg-gray-100 p-4 rounded-md text-sm font-mono"></div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -501,6 +494,25 @@
             });
             c += `end`;
             out.innerText = c;
+            generateTopologyDiagram();
+        }
+
+        function generateTopologyDiagram() {
+            const diagram = document.getElementById('topology-diagram');
+            if(!diagram) return;
+            let topo = '';
+            devices.forEach(dev => {
+                topo += `${dev.name || 'Unnamed'} (${dev.type})\n`;
+                dev.interfaces.forEach(intf => {
+                    if(intf.connectedTo) {
+                        const remoteDev = devices.find(d => d.id === intf.connectedTo.deviceId);
+                        const remoteIntf = remoteDev?.interfaces.find(i => i.id === intf.connectedTo.interfaceId);
+                        topo += `  ${intf.prefix}${intf.number} -- ${remoteDev?.name || 'Unnamed'} ${remoteIntf?.prefix}${remoteIntf?.number}\n`;
+                    }
+                });
+                topo += '\n';
+            });
+            diagram.innerText = topo;
         }
 
         function getDiagnosticsHtml() {
