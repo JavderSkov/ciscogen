@@ -95,7 +95,6 @@
 
         // --- STATE MANAGEMENT ---
         function init() {
-            // Default devices
             if (devices.length === 0) {
                 addDevice('router');
             }
@@ -126,13 +125,9 @@
         function deleteActiveDevice() {
             if (!activeDeviceId) return;
             devices = devices.filter(d => d.id !== activeDeviceId);
-
-            // Clean links
             devices.forEach(d => d.interfaces.forEach(i => {
                 if (i.connectedTo?.deviceId === activeDeviceId) i.connectedTo = null;
             }));
-
-            // Pick next device of same type, or any device
             const nextDev = devices.find(d => d.type === activeSubTab) || devices[0];
             activeDeviceId = nextDev ? nextDev.id : null;
             renderApp();
@@ -142,9 +137,11 @@
             return {
                 id: id, prefix: "Gi", number: `0/${id}`, enabled: false,
                 ip: "", mask: "", mode: type === 'switch' ? 'access' : 'routed',
-                vlan: "", trunkVlans: "", vrf: "", routingProtocol: 'none',
-                ospfProcess: '', ospfArea: '', bgpNeighborIp: '', bgpNeighborAs: '',
-                mplsEnabled: false, connectedTo: null
+                vlan: "", trunkVlans: "", vrf: "",
+                routingProtocol: 'none', ospfProcess: '', ospfArea: '',
+                bgpNeighborIp: '', bgpNeighborAs: '',
+                mplsEnabled: false, connectedTo: null,
+                dot1q: false // Router subinterface state
             };
         }
 
@@ -183,8 +180,8 @@
                 intf[field] = val;
                 generateConfig();
 
-                // CRITICAL FIX: Re-render for structural changes
-                if(['enabled', 'mode', 'prefix'].includes(field)) {
+                // Fields that change the DOM structure need re-render
+                if(['enabled', 'mode', 'prefix', 'dot1q', 'routingProtocol'].includes(field)) {
                     renderApp();
                 }
 
@@ -199,7 +196,6 @@
                 else {
                     const [dId, iId] = val.split(':');
                     intf.connectedTo = { deviceId: dId, interfaceId: parseInt(iId) };
-                    // Auto-link remote
                     const rDev = devices.find(d => d.id === dId);
                     const rInt = rDev?.interfaces.find(i => i.id == iId);
                     if(rInt) rInt.connectedTo = { deviceId: dev.id, interfaceId: intf.id };
@@ -221,15 +217,12 @@
                 return;
             }
 
-            // Cisco Tool Logic
             const filteredDevices = devices.filter(d => d.type === activeSubTab);
-            // Auto-select if activeDevice is invalid for current tab
             if (!activeDeviceId || !devices.find(d => d.id === activeDeviceId && d.type === activeSubTab)) {
                 activeDeviceId = filteredDevices.length > 0 ? filteredDevices[0].id : null;
             }
             const activeDevice = devices.find(d => d.id === activeDeviceId);
 
-            // Sub-Nav
             let html = `
                 <div class="flex justify-center mb-6">
                     <div class="bg-gray-100 p-1 rounded-lg flex space-x-1">
@@ -239,7 +232,6 @@
                 </div>
             `;
 
-            // Device Control Bar
             html += `
                 <div class="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div class="flex items-center gap-3">
@@ -256,7 +248,6 @@
             `;
 
             if (activeDevice) {
-                // Global Config Card
                 html += `
                     <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Global Configuration</h3>
@@ -279,7 +270,6 @@
                     </div>
                 `;
 
-                // Router Specific: VRF & BGP Grid
                 if (activeSubTab === 'router') {
                     html += `
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -314,7 +304,6 @@
                     `;
                 }
 
-                // Interfaces
                 html += `<h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Interfaces</h3>`;
                 html += `<div class="space-y-4 mb-8">`;
 
@@ -376,8 +365,28 @@
                                             </select>
                                         </div>
                                     </div>
+
+                                    <!-- Protocol Specifics -->
+                                    ${intf.routingProtocol === 'ospf' ? `
+                                        <div class="grid grid-cols-2 gap-4 p-3 bg-indigo-50 border border-indigo-100 rounded">
+                                            <div><label class="block text-xs font-medium text-indigo-800">Process ID</label><input type="number" value="${intf.ospfProcess}" class="w-full p-1.5 text-sm rounded border border-indigo-200" placeholder="1" oninput="updateInt(${intf.id}, 'ospfProcess', this.value)"></div>
+                                            <div><label class="block text-xs font-medium text-indigo-800">Area</label><input type="text" value="${intf.ospfArea}" class="w-full p-1.5 text-sm rounded border border-indigo-200" placeholder="0" oninput="updateInt(${intf.id}, 'ospfArea', this.value)"></div>
+                                        </div>
+                                    ` : ''}
+                                    ${intf.routingProtocol === 'bgp' ? `
+                                        <div class="grid grid-cols-2 gap-4 p-3 bg-orange-50 border border-orange-100 rounded">
+                                            <div><label class="block text-xs font-medium text-orange-800">Neighbor IP</label><input type="text" value="${intf.bgpNeighborIp}" class="w-full p-1.5 text-sm rounded border border-orange-200" placeholder="1.2.3.4" oninput="updateInt(${intf.id}, 'bgpNeighborIp', this.value)"></div>
+                                            <div><label class="block text-xs font-medium text-orange-800">Remote AS</label><input type="number" value="${intf.bgpNeighborAs}" class="w-full p-1.5 text-sm rounded border border-orange-200" placeholder="65002" oninput="updateInt(${intf.id}, 'bgpNeighborAs', this.value)"></div>
+                                        </div>
+                                    ` : ''}
+
                                     <div class="flex justify-between items-center mt-2">
-                                        <label class="flex items-center space-x-2 text-xs text-gray-600"><input type="checkbox" ${intf.vlan?'checked':''} onchange="updateInt(${intf.id}, 'vlan', this.checked?10:'')"> <span>Subinterface (Dot1Q)</span></label>
+                                        <div class="flex items-center gap-2">
+                                            <label class="flex items-center space-x-2 text-xs text-gray-600">
+                                                <input type="checkbox" ${intf.dot1q?'checked':''} onchange="updateInt(${intf.id}, 'dot1q', this.checked)"> <span>Subinterface (Dot1Q)</span>
+                                            </label>
+                                            ${intf.dot1q ? `<input type="number" value="${intf.vlan}" class="w-16 p-1 rounded border text-xs" placeholder="VLAN" oninput="updateInt(${intf.id}, 'vlan', this.value)">` : ''}
+                                        </div>
                                         <label class="flex items-center space-x-2 text-xs text-gray-600"><input type="checkbox" ${intf.mplsEnabled?'checked':''} onchange="updateInt(${intf.id}, 'mplsEnabled', this.checked)"> <span>Enable MPLS</span></label>
                                     </div>
                                 ` : `
@@ -464,7 +473,15 @@
 
             dev.interfaces.forEach(i => {
                 if(!i.enabled) return;
-                c += `interface ${i.prefix}${i.number}\n`;
+
+                // Router Subinterface Logic
+                if (dev.type === 'router' && i.dot1q && i.vlan) {
+                    c += `interface ${i.prefix}${i.number}.${i.vlan}\n`;
+                    c += ` encapsulation dot1Q ${i.vlan}\n`;
+                } else {
+                    c += `interface ${i.prefix}${i.number}\n`;
+                }
+
                 if(dev.type === 'switch') {
                     if(i.mode === 'access') {
                         c += ` switchport mode access\n`;
@@ -478,6 +495,7 @@
                     if(i.ip && i.mask) c += ` ip address ${i.ip} ${i.mask}\n`;
                     if(i.mplsEnabled) c += ` mpls ip\n`;
                     if(i.routingProtocol === 'ospf' && i.ospfProcess) c += ` ip ospf ${i.ospfProcess} area ${i.ospfArea}\n`;
+                    if(i.routingProtocol === 'bgp' && i.bgpNeighborIp && i.bgpNeighborAs) c += ` neighbor ${i.bgpNeighborIp} remote-as ${i.bgpNeighborAs}\n`;
                 }
                 c += ` no shutdown\n!\n`;
             });
